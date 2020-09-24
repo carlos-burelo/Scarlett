@@ -1,1 +1,1 @@
-https://github.com/carlos-burelo/Scarlett/blob/master/Banner.png?raw=true
+https://raw.githubusercontent.com/carlos-burelo/Scarlett/master/Banner.png

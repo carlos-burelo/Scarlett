@@ -1,3 +1,3 @@
 cd ..
 cd ..
-call S2.bat
+call S.bat

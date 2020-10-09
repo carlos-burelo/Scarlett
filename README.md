@@ -1,7 +1,7 @@
 ![Scarlett](https://raw.githubusercontent.com/carlos-burelo/Website/gh-pages/tools/Banner.png)
 
 Scarlett es un proyecto open source que espera facilitar el trabajo de desarrollo en los modelos
-Samsung Galaxy Series A (**2019**) desde el momento de extraccion hasta el de compilacion, agregando
+Samsung Galaxy A (**2019 Series**) desde el momento de extraccion hasta el de compilacion, agregando
 herramientas utiles para mejorar la experiencia del usuario y añadiendo autonomia del propio programa
 para tomar decisiones y poder contrarrestar los posibles errores.
 

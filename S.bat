@@ -193,7 +193,6 @@ setlocal enabledelayedexpansion
     cls
 	set ext=null
 	call :banner
-	
 	echo.
 	%cl%   {47} Extraccion menu {#}
 	echo.
@@ -308,7 +307,6 @@ setlocal enabledelayedexpansion
     cls
     title Scarlett Kitchen - build menu
 	call :banner
-	
 	%cl%   {47} Build menu {#}
 	echo.
 	echo.
@@ -525,7 +523,6 @@ setlocal enabledelayedexpansion
 	cls
 	title Scarlett kitchen - Tar compilation
 	call :banner
-	
 	%cl%   {47} Tar tool{#}
 	echo.
 	echo.
@@ -559,7 +556,6 @@ setlocal enabledelayedexpansion
 :compilar_tar_individual
 	cls
 	call :banner
-	
 	%cl%   {47} Individual tar {#}
 	echo.
 	echo.
@@ -611,7 +607,6 @@ setlocal enabledelayedexpansion
 :compilar_tar_masivo
 	cls
 	call :banner
-	
 	%cl%   {4F} repackaging in .tar {#}
 	echo.
 	echo.
@@ -667,7 +662,6 @@ setlocal enabledelayedexpansion
 :compilar_md5_individual
 	cls
 	call :banner
-	
 	%cl%   {47} Compile to md5 {#}
 	echo.
 	echo.
@@ -719,7 +713,6 @@ setlocal enabledelayedexpansion
 :compilar_tar_masivo
 	cls
 	call :banner
-	
 	%cl%   {4F} repackaging in .tar {#}
 	echo.
 	echo.
@@ -1511,8 +1504,7 @@ setlocal enabledelayedexpansion
 		set "display_id=no device found"
 	)
     title Scarlett Kitchen - ROM tools
-    call :banner	
-    	
+    call :banner
 	%cl%   {47} ROM tools {#}
 	echo.
 	echo.
@@ -1686,8 +1678,7 @@ setlocal enabledelayedexpansion
     	set "display_id=%%#"
 	)
 	title Scarlett Kitchen - ROM tools
-    call :banner	
-    	
+    call :banner
 	%cl%   {47} ROM tools {#}
 	echo.
 	echo.
@@ -1707,7 +1698,6 @@ setlocal enabledelayedexpansion
 	cls
     title Scarlett Kitchen - Apktool
     call :banner
-	
 	%cl%   {47} Plugins {#}
 	echo.
 	echo.
@@ -1754,7 +1744,6 @@ setlocal enabledelayedexpansion
 	cls
     title Scarlett Kitchen - Apktool
 	call :banner
-	
 	%cl%   {47} Apk Tool {#}
 	echo.
 	echo.
@@ -1810,7 +1799,6 @@ setlocal enabledelayedexpansion
 	cls
 	title Scarlett Kitchen - Logcat reader
     call :banner
-	
 	%cl%   {47} Logcat options {#}
 	echo.
 	echo.
@@ -1857,7 +1845,6 @@ setlocal enabledelayedexpansion
     title Scarlett Kitchen - Boot/Recovery tools
     cls
     call :banner
-	
 	%cl%   {47} Boot/recovery menu {#}
 	echo.
 	echo.
@@ -1999,7 +1986,6 @@ setlocal enabledelayedexpansion
 	if not exist "tools\plugins\*" (
 		cls
 		call :banner
-		
 		%cl%   {04}Not plugins detect{#}
 		echo.
 		echo.
@@ -2298,7 +2284,6 @@ setlocal enabledelayedexpansion
 :java_Download
 	cls
 	call :banner
-	
 	%cl%  {03}Downloading{#} java...
 	echo.
 	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/Java_setup.exe --no-check-certificate --directory-prefix=tools\bin

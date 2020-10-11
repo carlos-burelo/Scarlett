@@ -8,8 +8,6 @@ setlocal enabledelayedexpansion
 ::	exit
 ::	pause>nul
 ::)
-:: --- --- --- registro --- --- --- ::
-
 :: --- --- --- Start values --- --- --- ::
 :recursos
 	::ejecutables
@@ -24,7 +22,7 @@ setlocal enabledelayedexpansion
 	)
 :registrar
 	cls
-	call :banner
+	call :banner2
 	%cl%   {47} Login {#}
 	echo.
 	echo.
@@ -35,7 +33,7 @@ setlocal enabledelayedexpansion
 :main
 	cls
     title Scarlett Kitchen - Choose project
-	call :banner
+	call :banner2
 	%cl%   {47} Choose project {#}
 	echo.
 	echo.
@@ -45,7 +43,6 @@ setlocal enabledelayedexpansion
 		if not "%%a"==".git" if not "%%a"=="tools" (
 			set /a num+=1
 			echo.  !num!] %%~nxa
-			::del %temp%\projects.txt
 			echo.  !num!].%%~nxa>>"%temp%\projects.txt"
 		)
 	)
@@ -57,7 +54,7 @@ setlocal enabledelayedexpansion
 	echo.
 	echo.
 	set /p "option=# Select any option: "
-	if "!option!"=="n" goto formulario
+	if "!option!"=="n" goto crear_proyecto
 	if "!option!"=="r" call :reiniciar
 	if "!option!"=="e" exit
 	echo(%option%|findstr "^[-][1-9][0-9]*$ ^[1-9][0-9]*$ ^0$">nul&&goto :rest||echo."%option%" not exist & pause>nul & cls & goto :main
@@ -67,13 +64,11 @@ setlocal enabledelayedexpansion
 		if exist "%cd%\%%a" set "seleccion=%cd%\%%a" & set "current=%%~nxa"
 		)
 	)
-	::del %temp%\projects.txt
 
 :rutas
 	::Rutas
 	set data=%current%\project_files\data
 	set system=%current%\ROM\system\system
-	set prop=%current%\ROM\system\system\build.prop
 	set vendor=%current%\ROM\vendor
 	set product=%current%\ROM\product
 
@@ -82,16 +77,19 @@ setlocal enabledelayedexpansion
 	if exist "%current%\project_files\data\user_data" (
 		goto home
 	) else (
+		cls
+		call :banner2
+		%cl%   No project data detect in {03}%current%{#}
+		pause>nul
 		goto main
 	)
 :: --- --- --- 0) Home --- --- --- ::
 :home
     cls
-    title Scarlett Kitchen - Full Edition [1.0.2]
-	call :banner
-	call :banner2
 	call :datos
 	call :obtener_versiones
+    title Scarlett Kitchen - Full Edition [%scarlett_version%]
+	call :banner
 	del %temp%\projects.txt >nul 2>nul
 	%cl%   {47} Main Menu {#}
 	echo.
@@ -123,7 +121,7 @@ setlocal enabledelayedexpansion
 	if "!select!"=="2" goto main
 	if "!select!"=="3" goto abrir_archivos_del_proyecto
 	if "!select!"=="4" goto borrar_proyecto
-	if "!select!"=="5" goto decompilacion_base
+	if "!select!"=="5" goto buscar_decompilacion_anterior
 	if "!select!"=="6" goto configuraciones
 	if "!select!"=="7" goto rom_tools
 	if "!select!"=="8" goto boot_recovery_tools
@@ -138,26 +136,28 @@ setlocal enabledelayedexpansion
     cls
     title Scarlett Kitchen - Project tools
 	call :banner
-	call :banner2
 	%cl%   {47} Project tools {#}
 	echo.
 	echo.
-	%cl%   {09}1) Extraction menu{#}
+	%cl%   {09}1) Create new project{#}
 	echo.
-	%cl%   {08}2) Project Information{#}
+	%cl%   {09}2) Extraction menu{#}
 	echo.
-	%cl%   {07}3) Build menu{#}
+	%cl%   {08}3) Project Information{#}
 	echo.
-	%cl%   {05}4) Rewrite META-INF{#}
+	%cl%   {07}4) Build menu{#}
+	echo.
+	%cl%   {05}5) Rewrite META-INF{#}
 	echo.
 	%cl%   {06}b) Back{#}
 	echo.
 	echo.
 	set /p select=# Select any option: 
-	if "!select!"=="1" goto menu_de_extraccion
-	if "!select!"=="2" goto Informacion
-	if "!select!"=="3" goto menu_de_compilacion
-	if "!select!"=="4" goto reescribir_meta
+	if "!select!"=="1" goto crear_proyecto
+	if "!select!"=="2" goto menu_de_extraccion
+	if "!select!"=="3" goto Informacion
+	if "!select!"=="4" goto menu_de_compilacion
+	if "!select!"=="5" goto reescribir_meta
 	if "!select!"=="b" goto home
 	) else (
         goto herramientas_del_proyecto
@@ -171,7 +171,7 @@ setlocal enabledelayedexpansion
 						mkdir %current%\tmp
 						cls
 						call :banner
-						call :banner2
+						
 						%cl%   {47} Extraccion menu {#}
 						echo.
 						echo.
@@ -193,7 +193,7 @@ setlocal enabledelayedexpansion
     cls
 	set ext=null
 	call :banner
-	call :banner2
+	
 	echo.
 	%cl%   {47} Extraccion menu {#}
 	echo.
@@ -258,7 +258,7 @@ setlocal enabledelayedexpansion
 :Informacion
     cls
 	title Scarlett Kitchen - Information
-	call :banner
+	call :banner2
 	call :datos
 	call :variables_de_respaldo
 	echo.
@@ -308,7 +308,7 @@ setlocal enabledelayedexpansion
     cls
     title Scarlett Kitchen - build menu
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Build menu {#}
 	echo.
 	echo.
@@ -394,12 +394,18 @@ setlocal enabledelayedexpansion
 
 :compilar_system
 	if exist "%current%\ROM\system.img" (
-		mkdir %current%\project_files\old_files >nul 2>nul 
-		move /y %current%\ROM\system.img %current%\project_files\old_files >nul 2>nul 
+		cls
+		call :banner
+		set date=%DATE:-=_%
+		echo   system.img detected, saving to "project_img_%date%"...
+		mkdir %current%\project_files\project_img_%date% >nul 2>nul 
+		move /y %current%\ROM\system.img %current%\project_files\project_img_%date% >nul 2>nul
+		%cl%   {02}Successfully saved{#}
+		echo.
+		pause>nul
 	)
 	cls
-	call :banner 
-	call :banner2 
+	call :banner
 	if exist "%current%\project_files\data\system_fs_config" (
 		%cl%   {07}fs_config {#}{03}[Yes]{#}
 		echo.
@@ -466,13 +472,19 @@ setlocal enabledelayedexpansion
 	goto compilar_img_menu
 :compilar_vendor
 	if exist "%current%\ROM\vendor.img" (
-		mkdir %current%\project_files\old_files >nul 2>nul 
-		move /y %current%\ROM\vendor.img %current%\project_files\old_files >nul 2>nul 
+		cls
+		call :banner
+		set date=%DATE:-=_%
+		echo   vendor.img detected, saving to "project_img_%date%"...
+		mkdir %current%\project_files\project_img_%date% >nul 2>nul 
+		move /y %current%\ROM\vendor.img %current%\project_files\project_img_%date% >nul 2>nul
+		%cl%   {02}Successfully saved{#}
+		echo.
+		pause>nul
 	)
 	if exist "%current%\ROM\vendor" (
 		cls
 		call :banner 
-		call :banner2 
 		set /p vendor_size=<"%current%\project_files\data\vendor_size"
 		%cl%   {03}Repacking{#} vendor...[%vendor_size% bytes]
 		echo.
@@ -486,13 +498,19 @@ setlocal enabledelayedexpansion
 
 :compilar_product
 	if exist "%current%\ROM\product.img" (
-		mkdir %current%\project_files\old_files >nul 2>nul 
-		move /y %current%\ROM\product.img %current%\project_files\old_files >nul 2>nul 
+		cls
+		call :banner
+		set date=%DATE:-=_%
+		echo   product.img detected, saving to "project_img_%date%"...
+		mkdir %current%\project_files\project_img_%date% >nul 2>nul 
+		move /y %current%\ROM\product.img %current%\project_files\project_img_%date% >nul 2>nul
+		%cl%   {02}Successfully saved{#}
+		echo.
+		pause>nul
 	)
 	if exist "%current%\ROM\product" (
 		cls
 		call :banner 
-		call :banner2 
 		set /p product_size=<"%current%\project_files\data\product_size"
 		%cl%   {03}Repacking{#} product...[%product_size% bytes]
 		echo.
@@ -507,7 +525,7 @@ setlocal enabledelayedexpansion
 	cls
 	title Scarlett kitchen - Tar compilation
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Tar tool{#}
 	echo.
 	echo.
@@ -541,7 +559,7 @@ setlocal enabledelayedexpansion
 :compilar_tar_individual
 	cls
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Individual tar {#}
 	echo.
 	echo.
@@ -593,7 +611,7 @@ setlocal enabledelayedexpansion
 :compilar_tar_masivo
 	cls
 	call :banner
-	call :banner2
+	
 	%cl%   {4F} repackaging in .tar {#}
 	echo.
 	echo.
@@ -628,7 +646,7 @@ setlocal enabledelayedexpansion
 		cls
 		title Scarlett kitchen - Tar compilation
 		call :banner
-		call :banner2
+		
 		%cl%   {47} compile md5 menu {#}
 		echo.
 		echo.
@@ -649,7 +667,7 @@ setlocal enabledelayedexpansion
 :compilar_md5_individual
 	cls
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Compile to md5 {#}
 	echo.
 	echo.
@@ -701,7 +719,7 @@ setlocal enabledelayedexpansion
 :compilar_tar_masivo
 	cls
 	call :banner
-	call :banner2
+	
 	%cl%   {4F} repackaging in .tar {#}
 	echo.
 	echo.
@@ -733,7 +751,6 @@ setlocal enabledelayedexpansion
 	cls
 	title Scarlett Kitchen - Build zip
 	call :banner
-	call :banner2
 	%cl%   {47} Compiling zip {#}
 	echo.
 	echo.
@@ -768,37 +785,32 @@ setlocal enabledelayedexpansion
 	%bin%\sfk replace %updater-script% "/#DEVICE/%modelo%/" -yes > nul
 	exit /b
 
-:formulario
+:crear_proyecto
     cls
-    title Scarlett Kitchen - Form
-	call :banner
-    %cl%   Add a name for your project {04}[without spaces]{#}
+    title Scarlett Kitchen - Create Project
+	call :banner2
+    %cl%   Add a name for your project {03}spaces will be replaced with (_){#}
     echo.
     echo.
-    ::Rutas
-    :: Obteniendo variables del usuario
 	set project_name=
 	set /p project_name=1) Project name: 
 	set project_name=%project_name: =_%
     set /p user_name=2) User name: 
-	::cd %project_name%
 	set user_data=%project_name%\project_files\data\user_data
 	mkdir %project_name%\project_files\data
-	::if exist !user_data! del !user_data!
 	echo -------------------------->%project_name%\project_files\data\user_data
 	echo User data>>!user_data!
     echo -------------------------->>!user_data!
     echo project_name=%project_name%>>!user_data!
     echo user_name=%user_name%>>!user_data!
 	echo -------------------------->>!user_data!
-    :: Redirigiendo a "main"
 	goto main
 :: --- --- --- 3) Abrir archivos del projecto --- --- --- ::
 :abrir_archivos_del_proyecto
 	cls
 	title Scarlett Kitchen - Open project files
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Open Files {#}
 	echo.
 	echo.
@@ -908,7 +920,7 @@ setlocal enabledelayedexpansion
 	cls
 	title Scarlett Kitchen - Delete project
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Delete project {#}
 	echo.
 	echo.
@@ -940,23 +952,64 @@ setlocal enabledelayedexpansion
 	goto borrar_proyecto
 
 :: --- --- --- 5) Extraer Firmware --- --- --- ::
-:decompilacion_base
+:buscar_decompilacion_anterior
+	if exist "%current%\tmp\*.md5" (
+		cls
+		call :banner
+		%cl%   {47} MD5 Files detect {#}
+		echo.
+		echo.
+		%cl%   {03}Continue decompiling?[y/n]{#}
+		echo.
+		echo.
+		set /p select=# Select any option: 
+		if "!select!"=="y" goto borrar_decompilacion_anterior
+		if "!select!"=="n" goto decompilar_lz4
+	)
+	if exist "%current%\tmp\*.lz4" (
+		cls
+		call :banner
+		%cl%   {47} LZ4 Files detect {#}
+		echo.
+		echo.
+		%cl%   {03}Continue decompiling?[y/n]{#}
+		echo.
+		echo.
+		set /p select=# Select any option: 
+		if "!select!"=="y" goto borrar_decompilacion_anterior
+		if "!select!"=="n" goto decompilar_img	
+	)
+	if exist "%current%\tmp\*.img" (
+		cls
+		call :banner
+		%cl%   {47} IMG Files detect {#}
+		echo.
+		echo.
+		%cl%   {03}Continue decompiling?[y/n]{#}
+		echo.
+		echo.
+		set /p select=# Select any option: 
+		if "!select!"=="y" goto borrar_decompilacion_anterior
+		if "!select!"=="n" goto convertir_a_sparse	
+	)
+
+:borrar_decompilacion_anterior
 	:: --- --- --- Borrar tmp anterior (si existe) --- --- --- ::
 	if exist "%current%\tmp" (
 		rd /s /q "%current%\tmp" >nul
 	)
 	:: --- --- --- Borrar log anterior (si existe) --- --- --- ::
-	if exist %current%\project_files\data\log_decompile (
-		del %current%\project_files\data\log_decompile >nul 2>nul
+	if exist %current%\project_files\data\decompile.log (
+		del %current%\project_files\data\decompile.log >nul 2>nul
 	)
+:decompilacion_base
 	:: --- --- --- creando data anterior (si no existe) --- --- --- ::
 	if not exist %current%\project_files\data (
 		mkdir %current%\project_files\data >nul 2>nul
 	)
 	title Scarlett Kitchen - Decompiler Samsung Firmware
-
-	echo [%time%] - [LOG STARTED]>>%current%\project_files\data\log_decompile
-	set log_decompile=%current%\project_files\data\log_decompile
+	echo [%time%] [LOG STARTED]>>%current%\project_files\data\decompile.log
+	set log_decompile=%current%\project_files\data\decompile.log
     mkdir %current%\tmp
     cls
     call :banner
@@ -987,7 +1040,7 @@ setlocal enabledelayedexpansion
     %cl%   {0f}%filename%{#}
     echo.
     :: Extraccion de archivos especificos para optimizar la decompilacion (MD5 FILES)
-	echo [%TIME%] [EXTRACTING]  - [ZIP] - [%filename%]>>!log_decompile!
+	echo [%TIME%] [EXTRACTED] - [ZIP] - [%filename%]>>!log_decompile!
 	%bin%\7z x "%file%" -o"%current%\tmp" AP_*.tar.md5 -r >nul
 	%bin%\7z x "%file%" -o"%current%\tmp" CSC_*.tar.md5 -r >nul
 	%bin%\7z x "%file%" -o"%current%\tmp" BL_*.tar.md5 -r >nul
@@ -1021,27 +1074,27 @@ setlocal enabledelayedexpansion
 	%bin%\7z x "%%a" -o"%current%\tmp" dt.img.lz4 -r >nul
 	%bin%\7z x "%%a" -o"%current%\tmp" dtbo.img.lz4 -r >nul
 	%bin%\7z x "%%a" -o"%current%\tmp" recovery.img.lz4 -r >nul
-	echo [%TIME%] [EXTRACTING]  - [MD5] - [%%~na%%~xa]>>!log_decompile!
+	echo [%TIME%] [EXTRACTED] - [MD5] - [%%~na%%~xa]>>!log_decompile!
 	)
 	:: --- --- --- Registro del log --- --- --- ::
-	if exist %current%\tmp\system.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [system.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\vendor.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [vendor.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\product.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [product.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\system.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [system.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\vendor.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [vendor.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\product.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [product.img.lz4]>>!log_decompile!
 	:: --- --- --- super.img --- --- --- ::
-	if exist %current%\tmp\super.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [super.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\prism.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [prism.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\odm.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [odm.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\optics.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [optics.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\super.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [super.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\prism.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [prism.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\odm.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [odm.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\optics.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [optics.img.lz4]>>!log_decompile!
 	:: --- --- --- snapdragon --- --- --- ::
-	if exist %current%\tmp\system.img.ext4.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [system.img.ext4.lz4]>>!log_decompile!
-	if exist %current%\tmp\vendor.img.ext4.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [vendor.img.ext4.lz4]>>!log_decompile!
-	if exist %current%\tmp\product.img.ext4.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [product.img.ext4.lz4]>>!log_decompile!
+	if exist %current%\tmp\system.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [system.img.ext4.lz4]>>!log_decompile!
+	if exist %current%\tmp\vendor.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [vendor.img.ext4.lz4]>>!log_decompile!
+	if exist %current%\tmp\product.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [product.img.ext4.lz4]>>!log_decompile!
 	:: --- --- --- extras --- --- --- ::
-	if exist %current%\tmp\dt.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [dt.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\dtbo.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [dtbo.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\recovery.bin.lz4 echo [%TIME%] [EXTRACTING]  - [LZ4] - [recovery.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\boot.img.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [boot.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\*param.bin.lz4 echo [%TIME%] [EXTRACTING] - [LZ4] - [param.bin.lz4]>>!log_decompile!
+	if exist %current%\tmp\dt.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [dt.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\dtbo.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [dtbo.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\recovery.img.lz4 echo [%TIME%] [EXTRACTED]  - [LZ4] - [recovery.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\boot.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [boot.img.lz4]>>!log_decompile!
+	if exist %current%\tmp\*param.bin.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [param.bin.lz4]>>!log_decompile!
 	goto decompilar_img
 
 :decompilar_img
@@ -1074,24 +1127,24 @@ setlocal enabledelayedexpansion
 	%bin%\7z x "%%a" -o"%current%\tmp" *param.bin -r >nul
 	)
 	:: --- --- --- Registro del log --- --- --- ::
-	if exist %current%\tmp\system.img echo [%TIME%] [EXTRACTING] - [IMG] - [system.img]>>!log_decompile!
-	if exist %current%\tmp\vendor.img echo [%TIME%] [EXTRACTING] - [IMG] - [vendor.img]>>!log_decompile!
-	if exist %current%\tmp\product.img echo [%TIME%] [EXTRACTING] - [IMG] - [product.img]>>!log_decompile!
+	if exist %current%\tmp\system.img echo [%TIME%] [EXTRACTED] - [IMG] - [system.img]>>!log_decompile!
+	if exist %current%\tmp\vendor.img echo [%TIME%] [EXTRACTED] - [IMG] - [vendor.img]>>!log_decompile!
+	if exist %current%\tmp\product.img echo [%TIME%] [EXTRACTED] - [IMG] - [product.img]>>!log_decompile!
 	:: --- --- --- snapdragon --- --- --- ::
-	if exist %current%\tmp\system.img.ext4 echo [%TIME%] [EXTRACTING] - [EXT4] - [system.img.ext4]>>!log_decompile!
-	if exist %current%\tmp\vendor.img.ext4 echo [%TIME%] [EXTRACTING] - [EXT4] - [vendor.img.ext4]>>!log_decompile!
-	if exist %current%\tmp\product.img.ext4 echo [%TIME%] [EXTRACTING] - [EXT4] - [product.img.ext4]>>!log_decompile!
+	if exist %current%\tmp\system.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [system.img.ext4]>>!log_decompile!
+	if exist %current%\tmp\vendor.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [vendor.img.ext4]>>!log_decompile!
+	if exist %current%\tmp\product.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [product.img.ext4]>>!log_decompile!
 	:: --- --- --- super.img --- --- --- ::
-	if exist %current%\tmp\super.img echo [%TIME%] [EXTRACTING] - [IMG] - [super.img]>>!log_decompile!
-	if exist %current%\tmp\prism.img echo [%TIME%] [EXTRACTING] - [IMG] - [prism.img]>>!log_decompile!
-	if exist %current%\tmp\odm.img echo [%TIME%] [EXTRACTING] - [IMG] - [odm.img]>>!log_decompile!
-	if exist %current%\tmp\optics.img echo [%TIME%] [EXTRACTING] - [IMG] - [optics.img]>>!log_decompile!
+	if exist %current%\tmp\super.img echo [%TIME%] [EXTRACTED] - [IMG] - [super.img]>>!log_decompile!
+	if exist %current%\tmp\prism.img echo [%TIME%] [EXTRACTED] - [IMG] - [prism.img]>>!log_decompile!
+	if exist %current%\tmp\odm.img echo [%TIME%] [EXTRACTED] - [IMG] - [odm.img]>>!log_decompile!
+	if exist %current%\tmp\optics.img echo [%TIME%] [EXTRACTED] - [IMG] - [optics.img]>>!log_decompile!
 	:: --- --- --- extras --- --- --- ::
-	if exist %current%\tmp\dt.img echo [%TIME%] [EXTRACTING] - [IMG] - [dt.img]>>!log_decompile!
-	if exist %current%\tmp\dtbo.img echo [%TIME%] [EXTRACTING] - [IMG] - [dtbo.img]>>!log_decompile!
-	if exist %current%\tmp\recovery.img echo [%TIME%] [EXTRACTING]  - [IMG] - [recovery.img]>>!log_decompile!
-	if exist %current%\tmp\boot.img echo [%TIME%] [EXTRACTING] - [IMG] - [boot.img]>>!log_decompile!
-	if exist %current%\tmp\*param.bin echo [%TIME%] [EXTRACTING] - [BIN] - [param.bin]>>!log_decompile!
+	if exist %current%\tmp\dt.img echo [%TIME%] [EXTRACTED] - [IMG] - [dt.img]>>!log_decompile!
+	if exist %current%\tmp\dtbo.img echo [%TIME%] [EXTRACTED] - [IMG] - [dtbo.img]>>!log_decompile!
+	if exist %current%\tmp\recovery.img echo [%TIME%] [EXTRACTED] - [IMG] - [recovery.img]>>!log_decompile!
+	if exist %current%\tmp\boot.img echo [%TIME%] [EXTRACTED] - [IMG] - [boot.img]>>!log_decompile!
+	if exist %current%\tmp\*param.bin echo [%TIME%] [EXTRACTED] - [BIN] - [param.bin]>>!log_decompile!
 
 	if exist %current%\tmp\super.img (
 		goto decompilar_super
@@ -1104,11 +1157,11 @@ setlocal enabledelayedexpansion
 :renombrar_ext4
 	del "%current%\tmp\*.lz4" >nul 2>nul
 	if exist %current%\tmp\system.img.ext4 ren %current%\tmp\system.img.ext4 system.img
-	if exist %current%\tmp\system.img echo [%TIME%] [EXTRACTING]  - [IMG] - [system.img]>>!log_decompile!
+	if exist %current%\tmp\system.img echo [%TIME%] [EXTRACTED] - [IMG] - [system.img]>>!log_decompile!
 	if exist %current%\tmp\vendor.img.ext4 ren %current%\tmp\vendor.img.ext4 vendor.img
-	if exist %current%\tmp\vendor.img echo [%TIME%] [EXTRACTING]  - [IMG] - [vendor.img]>>!log_decompile!
+	if exist %current%\tmp\vendor.img echo [%TIME%] [EXTRACTED] - [IMG] - [vendor.img]>>!log_decompile!
 	if exist %current%\tmp\product.img.ext4 ren %current%\tmp\product.img.ext4 product.img
-	if exist %current%\tmp\product.img echo [%TIME%] [EXTRACTING]  - [IMG] - [product.img]>>!log_decompile!
+	if exist %current%\tmp\product.img echo [%TIME%] [EXTRACTED] - [IMG] - [product.img]>>!log_decompile!
 	goto convertir_a_sparse
 :decompilar_super
 	cls
@@ -1120,7 +1173,7 @@ setlocal enabledelayedexpansion
     %cl%   {0f}super.img{#}     	
 	echo.
 	%bin%\super %current%\tmp\super.img %current%\tmp\super.raw >nul 2>nul
-	echo [%TIME%] [EXTRACTING]  - [RAW]- [super.img]>>!log_decompile!
+	echo [%TIME%] [EXTRACTED]  - [RAW]- [super.img]>>!log_decompile!
 	goto decompilar_ext
 	:: EXTRACCION DEL LOS EXT 
 :decompilar_ext
@@ -1215,7 +1268,7 @@ setlocal enabledelayedexpansion
 
 :extraer_carpetas
     cls
-	title Scarlett Kitchen - Extrating  [FOLDERS]
+	title Scarlett Kitchen - Extrating  [FOLDER]
     call :banner
     %cl%   {4F}Extrating project folders...{#}
 	echo.
@@ -1224,42 +1277,42 @@ setlocal enabledelayedexpansion
 		mkdir %current%\ROM\system >nul 2>nul
 		echo   system
 		%bin%\imgextractor %current%\tmp\system.img %current%\ROM\system >nul 2>nul
-		echo [%TIME%] [EXTRACTING]  - [FOLDERS] - [system]>>!log_decompile!
+		echo [%TIME%] [EXTRACTED] - [FOLDER] - [system]>>!log_decompile!
 		REM del "%current%\tmp\system_sparse.img" >nul 2>nul
 	)
 	if exist "%current%\tmp\vendor.img" (
 		mkdir %current%\ROM\vendor >nul 2>nul
 		echo   vendor
 		%bin%\imgextractor %current%\tmp\vendor.img %current%\ROM\vendor >nul 2>nul
-		echo [%TIME%] [EXTRACTING]  - [FOLDERS] - [vendor]>>!log_decompile!
+		echo [%TIME%] [EXTRACTED] - [FOLDER] - [vendor]>>!log_decompile!
 		REM del "%current%\tmp\vendor_sparse.img" >nul 2>nul
 	)
 	if exist "%current%\tmp\product.img" (
 		mkdir %current%\ROM\product >nul 2>nul
 		echo   product
 		%bin%\imgextractor %current%\tmp\product.img %current%\ROM\product >nul 2>nul
-		echo [%TIME%] [EXTRACTING]  - [FOLDERS] - [product]>>!log_decompile!
+		echo [%TIME%] [EXTRACTED] - [FOLDER] - [product]>>!log_decompile!
 		REM del "%current%\tmp\product_sparse.img" >nul 2>nul
 	)
 	if exist "%current%\tmp\prism.img" (
 		echo   prism
 		mkdir %current%\ROM\prism >nul 2>nul
 		%bin%\imgextractor %current%\tmp\prism.img %current%\ROM\prism >nul 2>nul
-		echo [%TIME%] [EXTRACTING]  - [FOLDERS] - [prism]>>!log_decompile!
+		echo [%TIME%] [EXTRACTED] - [FOLDER] - [prism]>>!log_decompile!
 		REM del "%current%\tmp\prism_sparse.img" >nul 2>nul
 	)
 	if exist "%current%\tmp\optics.img" (
 		echo   optics
 		mkdir %current%\ROM\optics >nul 2>nul
 		%bin%\7z x %current%\tmp\optics.img -o%current%\ROM\optics >nul 2>nul
-		echo [%TIME%] [EXTRACTING]  - [FOLDERS] - [optics]>>!log_decompile!
+		echo [%TIME%] [EXTRACTED] - [FOLDER] - [optics]>>!log_decompile!
 		REM del "%current%\tmp\optics_sparse.img" >nul 2>nul
 	)
 	if exist "%current%\tmp\odm.img" (
 		echo   odm
 		mkdir %current%\ROM\odm >nul 2>nul
 		%bin%\7z x %current%\tmp\odm.img -o%current%\ROM\odm >nul 2>nul
-		echo [%TIME%] [EXTRACTING]  - [FOLDERS] - [odm]>>!log_decompile!
+		echo [%TIME%] [EXTRACTED] - [FOLDER] - [odm]>>!log_decompile!
 		REM del "%current%\tmp\odm_sparse.img" >nul 2>nul
 	)
 	goto mover_recursos
@@ -1284,7 +1337,7 @@ setlocal enabledelayedexpansion
 	:: --- --- --- Generador de system_fs_config --- --- --- ::
 	if exist %current%\project_files\data\system_fs_config del %current%\project_files\data\system_fs_config
 	%bin%\fs_generator %current%\tmp\system.img>>%current%\project_files\data\system_fs_config
-	if exist %current%\project_files\data\system_fs_config echo [GENERATED] - [S_F_S]- [system_fs_config]>>!log_decompile!
+	if exist %current%\project_files\data\system_fs_config echo [%TIME%] [GENERATED] - [system_fs_config]>>!log_decompile!
 
 	:: --- --- --- Generador de system_file_contexts --- --- --- ::
 	if exist %current%\project_files\data\system_file_contexts del %current%\project_files\data\system_file_contexts
@@ -1293,7 +1346,7 @@ setlocal enabledelayedexpansion
 	if exist %current%\tmp\un_file_contexts !busybox! rm -rf %current%\tmp\un_file_contexts >nul 2>nul
 	if exist %current%\tmp\system_file_contexts %bin%\dos2unix -q  %current%\tmp\system_file_contexts
 	if exist %current%\tmp\system_file_contexts move /y %current%\tmp\system_file_contexts %current%\project_files\data\system_file_contexts >nul 2>nul
-	if exist %current%\project_files\data\system_file_contexts echo [GENERATED] - [S_F_C] - [system_file_contexts]>>!log_decompile!
+	if exist %current%\project_files\data\system_file_contexts echo [%TIME%] [GENERATED] - [system_file_contexts]>>!log_decompile!
 	call :generar_meta
 	goto limpiar_tmp
 
@@ -1325,7 +1378,7 @@ setlocal enabledelayedexpansion
     title Scarlett Kitchen - Configuration
 	call :obtener_versiones
     call :banner
-    call :banner2
+    
 	%cl%   {47} Updates {#}
 	echo.
 	echo.
@@ -1459,7 +1512,7 @@ setlocal enabledelayedexpansion
 	)
     title Scarlett Kitchen - ROM tools
     call :banner	
-    call :banner2	
+    	
 	%cl%   {47} ROM tools {#}
 	echo.
 	echo.
@@ -1473,9 +1526,7 @@ setlocal enabledelayedexpansion
 	echo.
 	%cl%   {08}5) change ro.build.display.id={#}({02}!display_id!{#})
 	echo.
-	%cl%   {03}6) Remove boot_warning{#}
-	echo.
-	%cl%   {03}7) Change bootlogo{#}
+	%cl%   {03}6) Bootlogo options{#}
 	echo.
 	%cl%   {06}b) Back{#}
 	echo.
@@ -1486,8 +1537,7 @@ setlocal enabledelayedexpansion
 	if "!select!"=="3" goto deodex
 	if "!select!"=="4" goto build_tweak
 	if "!select!"=="5" goto cambiar_display_id
-	if "!select!"=="6" goto root_support
-	if "!select!"=="7" goto menu_de_scripts
+	if "!select!"=="6" goto bootlogo_menu
 	if "!select!"=="b" goto home
 	) else (
 		goto rom_tools
@@ -1498,7 +1548,7 @@ setlocal enabledelayedexpansion
 	cls
     title Scarlett Kitchen - Debloat Menu
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Debloat list {#}
 	echo.
 	echo.
@@ -1523,7 +1573,6 @@ setlocal enabledelayedexpansion
 	if exist %current%\bloat_ROM (
 		move /y %current%\bloat_ROM\system %current%\project_files\bloat >nul 2>nul
 	)
-
 	if exist "%current%\project_files\bloat\*" (
 		echo.
 		%cl%   {03}The current project does not need debloat{#}
@@ -1535,7 +1584,7 @@ setlocal enabledelayedexpansion
 	)
 	echo    Please wait...
 	for /f "delims=" %%a in ('type "tools\data\bloat"') do (
-		for /f "delims=" %%b in ('tools\bin\find "%current%" -name %%a ^| !busybox! tr / \\') do (
+		for /f "delims=" %%b in ('tools\bin\find "%current%" %%a ^| !busybox! tr / \\') do (
 			for /f "delims=" %%c in ('!busybox! dirname %%b') do (
 				set orig_dir=%%c
 				set test_folder=%%~nc%%~xc
@@ -1569,7 +1618,6 @@ setlocal enabledelayedexpansion
 	cls
     title Scarlett Kitchen - Deknox Menu
     call :banner
-	call :banner2
 	%cl%   {47} Deknox list {#}
 	echo.
 	echo.
@@ -1639,7 +1687,7 @@ setlocal enabledelayedexpansion
 	)
 	title Scarlett Kitchen - ROM tools
     call :banner	
-    call :banner2	
+    	
 	%cl%   {47} ROM tools {#}
 	echo.
 	echo.
@@ -1651,22 +1699,7 @@ setlocal enabledelayedexpansion
 	%bin%\sfk replace %system%\build.prop "/!display_id!/!display_id_new!/" -yes > nul
 	goto rom_tools
 
-:remover_boot_warning
-	cls
-:cambiar_bootlogo
-	cls
 
-	cls
-    for /f %%a in ('dir %current%\ROM\product\omc\ /ad /b' ) do (
-		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc -o %current%\ROM\product\omc >nul
-		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc\single -o %current%\ROM\product\omc\single >nul
-		%cl%  {03}Encoding{#} product\omc\%%a
-		echo.
-	)
-	del %current%\project_files\data\omc_status 
-	%bin%\sfk replace %data%\user_data "/sk.omc.status=decoded/sk.omc.status=encoded/" -yes > nul
-	pause
-	goto plugins
 
 :apktool_menu
 	mkdir %current%\Addons\apktool\in_apk
@@ -1674,7 +1707,7 @@ setlocal enabledelayedexpansion
 	cls
     title Scarlett Kitchen - Apktool
     call :banner
-	call :banner2
+	
 	%cl%   {47} Plugins {#}
 	echo.
 	echo.
@@ -1721,7 +1754,7 @@ setlocal enabledelayedexpansion
 	cls
     title Scarlett Kitchen - Apktool
 	call :banner
-	call :banner2
+	
 	%cl%   {47} Apk Tool {#}
 	echo.
 	echo.
@@ -1777,7 +1810,7 @@ setlocal enabledelayedexpansion
 	cls
 	title Scarlett Kitchen - Logcat reader
     call :banner
-	call :banner2
+	
 	%cl%   {47} Logcat options {#}
 	echo.
 	echo.
@@ -1824,7 +1857,7 @@ setlocal enabledelayedexpansion
     title Scarlett Kitchen - Boot/Recovery tools
     cls
     call :banner
-	call :banner2
+	
 	%cl%   {47} Boot/recovery menu {#}
 	echo.
 	echo.
@@ -1891,41 +1924,82 @@ setlocal enabledelayedexpansion
 	del /s /q "tools\plugins\aik_boot\*.img"
 	goto boot_recovery_tools
 
-:remover_boot_alert
+:bootlogo_menu
 	cls
 	title Scarlett Kitchen - Remove boot alert
 	call :banner
 	echo.
-
-	%cl%   {03}1) Patch param.bin{#} (Bootlogo)
+	%cl%   {03}1) Patch param.bin{#} (Only Fix)
 	echo.
-	%cl%   {03}2) Patch build.prop{#} (system,vendor,odm)
+	%cl%   {03}2) Customize param.bin{#} (Customize bootlogo)
 	echo.
-	%cl%   {03}m) Main menu{#}
-	echo.
-	%cl%   {04}b) Exit{#}
+	%cl%   {06}b) Back{#}
 	echo.
 	echo.
 	set /p select=# Select any option: 
-	if "!select!"=="1" (
-		
-	)
-	if "!select!"=="2" goto apktool_menu
-	if "!select!"=="3" goto adbtool
-	if "!select!"=="4" goto recovery_tar
-	if "!select!"=="5" goto odin
-	if "!select!"=="6" goto Logcat_Reader
-	if "!select!"=="7" goto scripts
+	if "!select!"=="1" goto reparar_bootlogo
+	if "!select!"=="2" goto cambiar_bootlogo
 	if "!select!"=="m" goto home
-	pause>nul
-	goto remover_boot_alert
+	) else (
+		goto remover_boot_alert
+	)
+	
+:reparar_bootlogo
+	cls
+	title Scarlett Kitchen - Patching Bootlogo
+	call :banner
+	%cl%   {47} Bootlogo Fixer {#}
+	echo.
+	echo.
+	if exist "%current%\project_files\data\param.bin" (
+		echo   Please wait....
+		%cl%   {03}Param.bin detect{#}...
+		echo.
+		copy %current%\project_files\data\param.bin %current%\project_files\data\param_tmp.bin >nul 2>nul
+		%cl%   {03}creating temporary param{#}...
+		echo.
+		%bin%\7z a %current%\project_files\data\param_tmp.bin .\tools\plugins\param_patch\booting_warning.jpg >nul 2>nul
+		ren %current%\project_files\data\param_tmp.bin param_patched.bin
+		if exist "%current%\project_files\data\param_patched.bin" (
+			echo.
+			%cl%   {02}Param successfully patched{#}
+			echo.
+			pause>nul
+			goto rom_tools
+		) else (
+			echo.
+			%cl%   {04}an error occurred during rebuilding{#}
+			echo.
+			pause>nul
+			goto rom_tools
+		)
+	) else (
+		echo.
+		%cl%   {04}no param was detected in: %current%\project_files\data\{#}
+		echo.
+		pause>nul
+		goto rom_tools
+	)
 
+:cambiar_bootlogo
+	cls
+
+    for /f %%a in ('dir %current%\ROM\product\omc\ /ad /b' ) do (
+		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc -o %current%\ROM\product\omc >nul
+		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc\single -o %current%\ROM\product\omc\single >nul
+		%cl%  {03}Encoding{#} product\omc\%%a
+		echo.
+	)
+	del %current%\project_files\data\omc_status 
+	%bin%\sfk replace %data%\user_data "/sk.omc.status=decoded/sk.omc.status=encoded/" -yes > nul
+	pause
+	goto plugins
 :: --- --- --- 9) Plugin menu --- --- --- ::
 :plugin_check
 	if not exist "tools\plugins\*" (
 		cls
 		call :banner
-		call :banner2
+		
 		%cl%   {04}Not plugins detect{#}
 		echo.
 		echo.
@@ -1950,7 +2024,6 @@ setlocal enabledelayedexpansion
 	cls
 	title Scarlett Kitchen - Plugin Menu
 	call :banner
-	call :banner2
 	%cl%   {47}Plugin menu{#}
 	echo.
 	echo.
@@ -1975,7 +2048,6 @@ setlocal enabledelayedexpansion
 	cls
     title Scarlett Kitchen - Run plugins
 	call :banner
-	call :banner2
 	%cl%   {47} Run plugin {#}
 	echo.
 	echo.
@@ -2003,9 +2075,13 @@ setlocal enabledelayedexpansion
 		%cl%   {03}6] Logcat_Reader{#}
 		echo.
 	)
-	if exist "too ls\plugins\param\logo.png" (
-	%cl%   {03}7] Remove boot warning{#}
-	echo.
+	if exist "tools\plugins\param\logo.png" (
+		%cl%   {03}7] Remove boot warning{#}
+		echo.
+	)
+	if exist "tools\plugins\tar_tool\md5sum.exe" (
+		%cl%   {03}8] md5 compiler{#}
+		echo.
 	)
 	%cl%   {06}b] Back{#}
 	echo.
@@ -2018,16 +2094,17 @@ setlocal enabledelayedexpansion
 	if "!select!"=="5" goto driver_check
 	if "!select!"=="6" goto Logcat_Reader
 	if "!select!"=="7" goto remover_boot_alert
+	if "!select!"=="8" goto md5_tool
+	if "!select!"=="9" goto frija_tool
 	if "!select!"=="b" goto home
 	) else (
-		goto plugins
+		goto ejecutar_plugins
 	)
 
 :descargar_plugins
 	cls
     title Scarlett Kitchen - Download Plugins
 	call :banner
-	call :banner2
 	%cl%   {47} Download plugins {#}
 	echo.
 	echo.
@@ -2080,6 +2157,20 @@ setlocal enabledelayedexpansion
 		%cl%   {06}7] BuildPatcher{#} [60 KB]
 		echo.
 	)
+	if exist "tools\plugins\tar_tool\md5sum.exe" (
+		%cl%   {03}8] md5 Compiler{#}
+		echo.
+	) else (
+		%cl%   {06}8] Md5 compiler{#} [229 KB]
+		echo.
+	)
+	if exist "tools\plugins\frija_tool\frija.exe" (
+		%cl%   {03}9] Frija{#}
+		echo.
+	) else (
+		%cl%   {06}9] Frija{#} [229 KB]
+		echo.
+	)
 	%cl%   {06}b) Back{#}
 	echo.
 	echo.
@@ -2087,10 +2178,12 @@ setlocal enabledelayedexpansion
 	if "!select!"=="1" goto omc_download
 	if "!select!"=="2" goto apktool_download
 	if "!select!"=="3" goto adb_download
-	if "!select!"=="4" goto tartool_download
+	if "!select!"=="4" goto tar_tool_download
 	if "!select!"=="5" goto odin_download
 	if "!select!"=="6" goto logcat_download
 	if "!select!"=="7" goto buildpatcher_download
+	if "!select!"=="8" goto md5_compiler_download
+	if "!select!"=="9" goto frija_download
 	if "!select!"=="b" goto plugins_menu
 	) else (
 		goto descargar_plugins
@@ -2098,11 +2191,26 @@ setlocal enabledelayedexpansion
 
 :: --- --- --- omc-decoder -- plugin --- --- --- ::
 :omc_decoder_menu
-	if exist "C:\Program Files (x86)\Java" (
+	if not exist "tools\plugins\omc_decoder\omc-decoder.jar" (
+		cls
+		call :banner
+		%cl%   {09}The plugin has not yet been downloaded{#}
+		echo.
+		pause>nul
+		goto ejecutar_plugins
+	)
+	if not exist "C:\Program Files (x86)\Java" (
+		cls
+		call :banner
+		%cl%   {09}This plugin cannot be run as the computer does not have Java{#}
+		echo.
+		pause>nul
+		goto ejecutar_plugins
+		)
+
 		cls
 		title Scarlett Kitchen - OMC decoder menu
 		call :banner
-		call :banner2
 		%cl%   {47} OMC Decoder/Encoder {#}
 		echo.
 		echo.
@@ -2118,18 +2226,9 @@ setlocal enabledelayedexpansion
 		if "!select!"=="2" goto codificar_omc
 		if "!select!"=="b" goto ejecutar_plugins
 		) else (
-	)
 			goto omc_decoder_menu
-		) else (
-			call :java
 		)
-:java_omc
-	if exist !java_check! (
-		goto verificar_omc_status
-	) else (
-		%cl% {04} Java are not intalled{#}
-		echo.
-	)
+
 :decodificar_omc
 	if exist "%current%\ROM\product\omc" (
 		cls
@@ -2147,9 +2246,9 @@ setlocal enabledelayedexpansion
 		cls
 		call :banner
 		for /f %%a in ('dir %current%\ROM\optics\configs\carriers\ /ad /b' ) do (
-			%cl%  {03}Decoding{#} %current%\ROM\product\omc\%%a\conf\cscfeature.xml
+			%cl%  {03}Decoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature.xml
 			echo.
-			%cl%  {03}Decoding{#} %current%\ROM\product\omc\%%a\conf\cscfeature_network.xml
+			%cl%  {03}Decoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature_network.xml
 			echo.
 			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\ROM\optics\configs\carriers -o %current%\ROM\optics\configs\carriers >nul
 			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\ROM\optics\configs\carriers\single -o %current%\ROM\optics\configs\carriers\single >nul
@@ -2199,10 +2298,10 @@ setlocal enabledelayedexpansion
 :java_Download
 	cls
 	call :banner
-	call :banner2
+	
 	%cl%  {03}Downloading{#} java...
 	echo.
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/Java_setup.exe --no-check-certificate --directory-prefix=tools\bin
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/Java_setup.exe --no-check-certificate --directory-prefix=tools\bin
 	echo.
 	set /p select=# do you want to install it now? [y/n]: 
 	if "!select!"=="y" start tools\bin\Java_setup.exe
@@ -2213,10 +2312,10 @@ setlocal enabledelayedexpansion
 :adb_Download
 	cls
 	call :banner
-	call :banner2
+	
 	%cl%  {03}Downloading{#} adb...
 	echo.
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/adb_setup.exe --no-check-certificate --directory-prefix=tools\bin
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/adb_setup.exe --no-check-certificate --directory-prefix=tools\bin
 	echo.
 	set /p select=# do you want to install it now? [y/n]: 
 	if "!select!"=="y" start tools\bin\Java_setup.exe
@@ -2237,55 +2336,56 @@ setlocal enabledelayedexpansion
 :omc_download
 	cls
 	call :banner
-	call :banner2
 	%cl%  {03}Downloading{#} omc_decoder.jar...
 	echo.
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/omc_decoder/omc-decoder.jar --no-check-certificate --directory-prefix=tools\plugins\omc_decoder
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/omc_decoder/omc-decoder.jar --no-check-certificate --directory-prefix=tools\plugins\omc_decoder
 	echo.
 	goto descargar_plugins
 :apktool_download
 	cls
 	call :banner
-	call :banner2
 	%cl%  {03}Downloading{#} apk_tool.jar...
 	echo.
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/apk_tool/apktool.jar --no-check-certificate --directory-prefix=tools\plugins\apk_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/apk_tool/apktool.jar --no-check-certificate --directory-prefix=tools\plugins\apk_tool
 	echo.
 	goto descargar_plugins
 :adb_download
 	call :banner
-	call :banner2
 	%cl%  {03}Downloading{#} adb.exe...
 	echo.
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/adb_tool/adb.exe --no-check-certificate --directory-prefix=tools\plugins\adb_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/adb_tool/AdbWinApi.dll --no-check-certificate --directory-prefix=tools\plugins\adb_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/adb_tool/AdbWinUsbApi.dll --no-check-certificate --directory-prefix=tools\plugins\adb_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/adb_tool/adb.exe --no-check-certificate --directory-prefix=tools\plugins\adb_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/adb_tool/AdbWinApi.dll --no-check-certificate --directory-prefix=tools\plugins\adb_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/adb_tool/AdbWinUsbApi.dll --no-check-certificate --directory-prefix=tools\plugins\adb_tool
 	echo.
 	goto descargar_plugins
 :odin_download
 	call :banner
-	call :banner2
 	%cl%  {03}Downloading{#} odin3.exe...
 	echo.
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/odin_3/odin3.exe --no-check-certificate --directory-prefix=tools\plugins\odin_3
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/odin_3/odin3.ini --no-check-certificate --directory-prefix=tools\plugins\odin_3
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/odin_3/odin3.exe --no-check-certificate --directory-prefix=tools\plugins\odin_3
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/odin_3/odin3.ini --no-check-certificate --directory-prefix=tools\plugins\odin_3
 	echo.
 	goto descargar_plugins
 
-:tartool_download
+:tar_tool_download
 	cls
 	call :banner
-	call :banner2
 	%cl%   {03}Downloading{#} tar.exe...
 	echo.
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/tar.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/cyggcc_s-1.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/cygiconv-2.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/cygintl-8.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/cygwin1.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/ls.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/md5sum.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
-	%bin%\wget -q https://github.com/carlos-burelo/plugins/raw/master/tar_tool/mv.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/tar_tool/tar.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/tar_tool/cyggcc_s-1.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/tar_tool/cygiconv-2.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/tar_tool/cygintl-8.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/tar_tool/cygwin1.dll --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/tar_tool/ls.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	goto descargar_plugins
+:md5_compiler_download
+	cls
+	call :banner
+	%cl%   {03}Downloading{#} md5.exe...
+	echo.
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/md5_tool/md5sum.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
+	%bin%\wget -q https://github.com/carlos-burelo/Scarlett/raw/master/tools/plugins/md5_tool/mv.exe --no-check-certificate --directory-prefix=tools\plugins\tar_tool
 	goto descargar_plugins
 
 
@@ -2314,7 +2414,7 @@ setlocal enabledelayedexpansion
 :java_check
 	cls
 	call :banner
-	call :banner2
+	
 	echo.
 	%cl%   {04} Java are not intalled{#}
 	echo.
@@ -2336,14 +2436,23 @@ setlocal enabledelayedexpansion
     %cl% {08}-----------------------------------------------------------------------------------------------{#}
     echo.
 	echo.
-	exit /b 
-:banner2
 	%cl%   {03}Build Version:{#} !pda!           {03}Project Name:{#} !current!
 	echo.
 	%cl%   {0a}Android Version:{#} {07}!android_version!{#}
 	echo.
 	echo.
 	exit /b
+:banner2
+	%cl% {08}-----------------------------------------------------------------------------------------------{#}
+    echo.
+    %cl% {80}   Scarlett Kitchen (Full edition)                                                             {#}
+    echo.
+    %cl% {80}   By Carlos Burelo                                                                            {#}
+    echo.
+    %cl% {08}-----------------------------------------------------------------------------------------------{#}
+    echo.
+	echo.
+	
 
 :obtener_versiones
 	if exist "tools\Scarlett.md" (
@@ -2372,17 +2481,17 @@ setlocal enabledelayedexpansion
 
 :datos
 	::build.prop
-	if exist "%current%\ROM\system\system" (
+	if exist "%current%\ROM\system\system\build.prop" (
 		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.incremental="') do ( set "pda=%%#")
+		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.release="') do ( set "android_version=%%#")
 		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.system.device="') do ( set "dispositivo=%%#")
 		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.system.model="') do ( set "modelo=%%#")
 		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.cpu.abi="') do ( set "arquitectura=%%#")
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.release="') do ( set "android_version=%%#")
 		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.hardware.chipname="') do ( set "chipset=%%#")
 		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.security_patch="') do ( set "security_patch=%%#")
 	)
 	::user_data
-	if exist "%current%\project_files\data" (
+	if exist "%current%\project_files\data\user_data" (
 		for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "project_name="') do ( set "project_name=%%#")
 		for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "project_dev="') do ( set "project_autor=%%#")
 	)
@@ -2406,7 +2515,7 @@ setlocal enabledelayedexpansion
 		) else (
 			set knox_status=Knoxed
 		)
-		:: Knox Detect
+		:: Deodex Detect
 		if exist %current%\ROM\system\system\framework\*.vdex (
 			set deodex_status=Odexed
 		) else (

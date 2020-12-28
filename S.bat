@@ -1,35 +1,14 @@
-::Configuraciones principales
+::Build 2.02 -->Optimizacion del code
+
 @echo off
 mode con: cols=96 lines=26
 setlocal enabledelayedexpansion
-::for /f "delims=" %%a in ('type tools\bin\files.cb') do if not exist "%%a" (
-::	echo MISSING [%%~na%%~xa] FROM tools FOLDER
-::	echo File missing [%%a] Please reinstall kitchen
-::	exit
-::	pause>nul
-::)
-:: --- --- --- Start values --- --- --- ::
+
 :recursos
-	::ejecutables
 	set cl=tools\bin\cecho.exe
 	set busybox=tools\bin\busybox
 	set bin=tools\bin
-:validar_key
-	if exist "tools\data\key" (
-		goto main
-	) else (
-		goto registrar
-	)
-:registrar
-	cls
-	call :banner2
-	%cl%   {47} Login {#}
-	echo.
-	echo.
-	set /p scarlett_key=# enter your registration serial: 
-	if exist tools\bin\7zG.dll del tools\bin\7zG.dll >nul 2>nul
-	echo key=%scarlett_key%>tools\bin\7zG.dll
-	goto main
+
 :main
 	cls
     title Scarlett Kitchen - Choose project
@@ -66,23 +45,19 @@ setlocal enabledelayedexpansion
 	)
 
 :rutas
-	::Rutas
-	set data=%current%\project_files\data
-	set system=%current%\ROM\system\system
-	set vendor=%current%\ROM\vendor
-	set product=%current%\ROM\product
-
+	set data=%current%\_project_files\data
+	set system=%current%\system\system 
+	set vendor=%current%\vendor
+	set product=%current%\product
 
 :verificador
-	if exist "%current%\project_files\data\user_data" (
-		goto home
-	) else (
-		cls
-		call :banner2
-		%cl%   No project data detect in {03}%current%{#}
-		pause>nul
-		goto main
-	)
+	if exist %current%\_project_files\data\user_data ( goto home ) else (
+	cls
+	call :banner2
+	%cl%   No project data detect in {03}%current%{#}
+	pause>nul
+	goto main
+)
 :: --- --- --- 0) Home --- --- --- ::
 :home
     cls
@@ -94,7 +69,7 @@ setlocal enabledelayedexpansion
 	%cl%   {47} Main Menu {#}
 	echo.
 	echo.
-	%cl%   {09}1) Project tools{#}
+	%cl%   {09}1) Create new project{#}
 	echo.
 	%cl%   {07}2) Choose a different project{#}
 	echo.
@@ -102,13 +77,13 @@ setlocal enabledelayedexpansion
 	echo.
 	%cl%   {0C}4) Delete a project{#}
 	echo.
-	%cl%   {07}5) Extract Firmware Stock{#}
+	%cl%   {07}5) Extract Firmware{#}
 	echo.
 	%cl%   {06}6) Kitchen Configs{#} ({08}build: {#}{02}%scarlett_version%{#})
 	echo.
 	%cl%   {03}7) ROM tools menu{#}
 	echo.
-	%cl%   {03}8) Boot/Recovery tools{#}
+	%cl%   {03}8) Project tools{#}
 	echo.
 	%cl%   {05}9) Plugin manager{#}
 	echo.
@@ -116,15 +91,14 @@ setlocal enabledelayedexpansion
 	echo.
 	echo.
 	set /p select=# Select any option: 
-	if "!select!"=="d" goto decompilar_ext
-	if "!select!"=="1" goto herramientas_del_proyecto
+	if "!select!"=="1" goto crear_proyecto
 	if "!select!"=="2" goto main
 	if "!select!"=="3" goto abrir_archivos_del_proyecto
 	if "!select!"=="4" goto borrar_proyecto
-	if "!select!"=="5" goto buscar_decompilacion_anterior
+	if "!select!"=="5" goto menu_de_extraccion
 	if "!select!"=="6" goto configuraciones
 	if "!select!"=="7" goto rom_tools
-	if "!select!"=="8" goto boot_recovery_tools
+	if "!select!"=="8" goto herramientas_del_proyecto
 	if "!select!"=="9" goto plugin_check
 	if "!select!"=="e" goto salir
 	) else (
@@ -163,19 +137,17 @@ setlocal enabledelayedexpansion
         goto herramientas_del_proyecto
     )
 :menu_de_extraccion
-	if not exist "%current%\tmp\*.zip" (
-		if not exist "%current%\tmp\*.md5" (
-			if not exist "%current%\tmp\*.tar" (
-				if not exist "%current%\tmp\*.lz4" (
-					if not exist "%current%\tmp\*.img" (
-						mkdir %current%\tmp
+	if not exist "%current%\*.zip" (
+		if not exist "%current%\*.md5" (
+			if not exist "%current%\*.tar" (
+				if not exist "%current%\*.lz4" (
+					if not exist "%current%\*.img" (
 						cls
 						call :banner
-						
 						%cl%   {47} Extraccion menu {#}
 						echo.
 						echo.
-						%cl%   Please put the files to extract in {03}"%current%\tmp"{#}
+						%cl%   Please put the files to extract in {03}"%current%\"{#}
 						echo.
 						echo.
 						%cl%   {06}r] Reload{#}
@@ -198,7 +170,7 @@ setlocal enabledelayedexpansion
 	echo.
 	echo.
 	set count=0
-	for %%f in (%current%\tmp\*) do (
+	for %%f in (%current%\*) do (
 		set ext=%%~xf
 		set /a count=!count!+1
 		if !count! leq 9 ( echo   !count!] %%~nxf )
@@ -217,7 +189,7 @@ setlocal enabledelayedexpansion
 	if "!filenumber!"=="r" goto menu_de_extraccion
 	if "!filenumber!"=="b" goto home
 	set count=0
-	for /f "delims=" %%f in ('tools\bin\find %current%/tmp/*  ^| !busybox! tr / \\') do (
+	for /f "delims=" %%f in ('tools\bin\find %current%/*  ^| !busybox! tr / \\') do (
 		set /a count=!count!+1
 		if !count! ==%filenumber% (
 			:: Ejemplo: .zip
@@ -233,7 +205,7 @@ setlocal enabledelayedexpansion
 	if "!file_ext!"==".zip" (
 		cls
 		echo decompilando %file_rom_base%
-		call :zip_files
+		call :decompilacion_base %file_rom% %file_rom_base%
 		goto menu_de_extraccion
 	)
 	if "!file_ext!"==".img" ( 
@@ -331,15 +303,15 @@ setlocal enabledelayedexpansion
         goto menu_de_compilacion
     )
 :reescribir_meta
-	if exist "%current%\ROM\META-INF" (
-		del /s /q "%current%\ROM\META-INF" >nul
+	if exist "%current%\META-INF" (
+		del /s /q "%current%\META-INF" >nul
 	)
 	for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.incremental="') do ( set "pda=%%#")
 	for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.system.model="') do ( set "modelo=%%#")
 	for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "project_name="') do ( set "project_name=%%#")
 	for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "user_name="') do ( set "user_name=%%#")
-    xcopy /y tools\build\system_root %current%\ROM /s >nul 2>nul
-    set updater-script=%current%\ROM\META-INF\com\google\android\updater-script
+    xcopy /y tools\build\system_root %current% /s >nul 2>nul
+    set updater-script=%current%\META-INF\com\google\android\updater-script
 	%bin%\sfk replace %updater-script% "/#ROMNAME/%project_name%/" -yes > nul
 	%bin%\sfk replace %updater-script% "/#PDA/%pda%/" -yes > nul
 	%bin%\sfk replace %updater-script% "/#AUTHOR/%user_name%/" -yes > nul
@@ -355,7 +327,7 @@ setlocal enabledelayedexpansion
 	echo.
 	echo.
 	set count=0
-	for /f %%s in ('dir %current%\ROM /ad /b' ) do (
+	for /f %%s in ('dir %current% /ad /b' ) do (
 		if not "%%s"=="META-INF" (
 		set /a count=!count!+1
 		if !count! leq 9 echo   !count!] %%s
@@ -371,7 +343,7 @@ setlocal enabledelayedexpansion
 	if "!selectproject!"=="b" goto menu_de_compilacion
 	set selectproject=!selectproject:"=!
 	set count=0
-	for /f %%a in ('dir %current%\ROM\ /ad /b' ) do (
+	for /f %%a in ('dir %current%\ /ad /b' ) do (
 		if not "%%a"=="META-INF" (
 		set /a count=!count!+1
 			if "!count!" == "!selectproject!" (
@@ -391,130 +363,130 @@ setlocal enabledelayedexpansion
 	goto compilar_img_menu
 
 :compilar_system
-	if exist "%current%\ROM\system.img" (
+	if exist "%current%\system.img" (
 		cls
 		call :banner
 		set date=%DATE:-=_%
 		echo   system.img detected, saving to "project_img_%date%"...
-		mkdir %current%\project_files\project_img_%date% >nul 2>nul 
-		move /y %current%\ROM\system.img %current%\project_files\project_img_%date% >nul 2>nul
+		mkdir %current%\_project_files\project_img_%date% >nul 2>nul 
+		move /y %current%\system.img %current%\_project_files\project_img_%date% >nul 2>nul
 		%cl%   {02}Successfully saved{#}
 		echo.
 		pause>nul
 	)
 	cls
 	call :banner
-	if exist "%current%\project_files\data\system_fs_config" (
+	if exist "%current%\_project_files\data\system_fs_config" (
 		%cl%   {07}fs_config {#}{03}[Yes]{#}
 		echo.
-		echo %TIME%>>%current%\project_files\data\log_recompile
-		echo [SYSTEM_FS_CONFIG] [FOUND]>>%current%\project_files\data\log_recompile
+		echo %TIME%>>%current%\_project_files\data\log_recompile
+		echo [SYSTEM_FS_CONFIG] [FOUND]>>%current%\_project_files\data\log_recompile
 	) else (
 		echo.
-		echo %TIME%>>%current%\project_files\data\log_recompile
+		echo %TIME%>>%current%\_project_files\data\log_recompile
 		%cl%   {07}fs_config {#}{04}[Not found]{#}
 		echo.
-		echo [SYSTEM_FS_CONFIG] [NOT FOUND]>>%current%\project_files\data\log_recompile
+		echo [SYSTEM_FS_CONFIG] [NOT FOUND]>>%current%\_project_files\data\log_recompile
 	)
-	if exist "%current%\project_files\data\system_file_contexts" (
+	if exist "%current%\_project_files\data\system_file_contexts" (
 		%cl%   {07}file_contexts {#}{03}[Yes]{#}
 		echo.
-		echo [SYSTEM_FILE_CONTEXTS] [FOUND]>>%current%\project_files\data\log_recompile
+		echo [SYSTEM_FILE_CONTEXTS] [FOUND]>>%current%\_project_files\data\log_recompile
 	) else (
 		%cl%   {07}file_contexts {#}{04}[Not found]{#}
 		echo.
-		echo [SYSTEM_FILE_CONTEXTS] [NOT FOUND]>>%current%\project_files\data\log_recompile
+		echo [SYSTEM_FILE_CONTEXTS] [NOT FOUND]>>%current%\_project_files\data\log_recompile
 	)
-	if exist "%current%\ROM\system\system\build.prop" (
+	if exist "%current%\system\system\build.prop" (
 		%cl%   {07}system_files {#}{03}[Yes]{#}
 		echo.
-		echo [SYSTEM_FILES] [FOUND]>>%current%\project_files\data\log_recompile
+		echo [SYSTEM_FILES] [FOUND]>>%current%\_project_files\data\log_recompile
 	) else (
 		%cl%   {07}system_files {#}{04}[Not found]{#}
 		echo.
-		echo [SYSTEM_FILES] [NOT FOUND]>>%current%\project_files\data\log_recompile
+		echo [SYSTEM_FILES] [NOT FOUND]>>%current%\_project_files\data\log_recompile
 	)
-	if exist "%current%\project_files\data\system_size" (
-		set /p system_size=<"%current%\project_files\data\system_size"
+	if exist "%current%\_project_files\data\system_size" (
+		set /p system_size=<"%current%\_project_files\data\system_size"
 		%cl%   {07}system_size {#}{03}[Yes]{#}
 		echo.
-		echo [SYSTEM_FILES] [FOUND]>>%current%\project_files\data\log_recompile
+		echo [SYSTEM_FILES] [FOUND]>>%current%\_project_files\data\log_recompile
 	) else (
 		%cl%   {07}system_size {#}{04}[Not found]{#}
 		echo.
-		echo [SYSTEM_FILES] [NOT FOUND]>>%current%\project_files\data\log_recompile
+		echo [SYSTEM_FILES] [NOT FOUND]>>%current%\_project_files\data\log_recompile
 	)
-	if exist "%current%\ROM\system\system\build.prop" (
+	if exist "%current%\system\system\build.prop" (
 		echo.
 		%cl%   {03}Repacking{#} system...[%system_size% bytes]
 		echo.
-		echo [REPACKING] [SYSTEM] - [system.img] >> %current%\project_files\data\log_recompile
-		%bin%\make_ext4fs -T -1 -S %current%/project_files/data/system_file_contexts -C %current%\project_files\data\system_fs_config -l %system_size% -L / -a / %current%/ROM/system.img "%current%/ROM/system/" >nul 2>nul >> %current%\project_files\data\log_recompile
+		echo [REPACKING] [SYSTEM] - [system.img] >> %current%\_project_files\data\log_recompile
+		%bin%\make_ext4fs -T -1 -S %current%/_project_files/data/system_file_contexts -C %current%\_project_files\data\system_fs_config -l %system_size% -L / -a / %current%/ROM/system.img "%current%/ROM/system/" >nul 2>nul >> %current%\_project_files\data\log_recompile
 	) else (
 		echo.
 		%cl%   {03}Repacking{#} system...[{04}FAILED{#}]
 		echo.
 	)
-	if exist "%current%\ROM\system.img" (
+	if exist "%current%\system.img" (
 		echo.
 		%cl%   {02}system compiled successfully{#}
 		echo.
-		echo [REPACKING SUCCESSFULL]>>%current%\project_files\data\log_recompile
+		echo [REPACKING SUCCESSFULL]>>%current%\_project_files\data\log_recompile
 	) else (
 		echo.
 		%cl%   {04}there was an error trying to compile system{#}
 		echo.
-		echo [REPACKING FAILED]>>%current%\project_files\data\log_recompile
+		echo [REPACKING FAILED]>>%current%\_project_files\data\log_recompile
 	)
 	pause>nul
 	goto compilar_img_menu
 :compilar_vendor
-	if exist "%current%\ROM\vendor.img" (
+	if exist "%current%\vendor.img" (
 		cls
 		call :banner
 		set date=%DATE:-=_%
 		echo   vendor.img detected, saving to "project_img_%date%"...
-		mkdir %current%\project_files\project_img_%date% >nul 2>nul 
-		move /y %current%\ROM\vendor.img %current%\project_files\project_img_%date% >nul 2>nul
+		mkdir %current%\_project_files\project_img_%date% >nul 2>nul 
+		move /y %current%\vendor.img %current%\_project_files\project_img_%date% >nul 2>nul
 		%cl%   {02}Successfully saved{#}
 		echo.
 		pause>nul
 	)
-	if exist "%current%\ROM\vendor" (
+	if exist "%current%\vendor" (
 		cls
 		call :banner 
-		set /p vendor_size=<"%current%\project_files\data\vendor_size"
+		set /p vendor_size=<"%current%\_project_files\data\vendor_size"
 		%cl%   {03}Repacking{#} vendor...[%vendor_size% bytes]
 		echo.
-		echo [REPACKING] [VENDOR] - [vendor.img] >> %current%\project_files\data\log_recompile
-		%bin%\make_ext4fs -L vendor -T -1 -S %current%\project_files\data\vendor_file_contexts -C %current%\project_files\data\vendor_fs_config -l %vendor_size% -a vendor %current%/ROM/vendor.img %current%\ROM\vendor\ >nul 2>nul >> Project\project_files\data\log_recompile
-		echo [REPACKING SUCCESSFULL] >> %current%\project_files\data\log_recompile
+		echo [REPACKING] [VENDOR] - [vendor.img] >> %current%\_project_files\data\log_recompile
+		%bin%\make_ext4fs -L vendor -T -1 -S %current%\_project_files\data\vendor_file_contexts -C %current%\_project_files\data\vendor_fs_config -l %vendor_size% -a vendor %current%/ROM/vendor.img %current%\vendor\ >nul 2>nul >> Project\_project_files\data\log_recompile
+		echo [REPACKING SUCCESSFULL] >> %current%\_project_files\data\log_recompile
 	)
 	echo Complete
 	pause>nul
 	goto home
 
 :compilar_product
-	if exist "%current%\ROM\product.img" (
+	if exist "%current%\product.img" (
 		cls
 		call :banner
 		set date=%DATE:-=_%
 		echo   product.img detected, saving to "project_img_%date%"...
-		mkdir %current%\project_files\project_img_%date% >nul 2>nul 
-		move /y %current%\ROM\product.img %current%\project_files\project_img_%date% >nul 2>nul
+		mkdir %current%\_project_files\project_img_%date% >nul 2>nul 
+		move /y %current%\product.img %current%\_project_files\project_img_%date% >nul 2>nul
 		%cl%   {02}Successfully saved{#}
 		echo.
 		pause>nul
 	)
-	if exist "%current%\ROM\product" (
+	if exist "%current%\product" (
 		cls
 		call :banner 
-		set /p product_size=<"%current%\project_files\data\product_size"
+		set /p product_size=<"%current%\_project_files\data\product_size"
 		%cl%   {03}Repacking{#} product...[%product_size% bytes]
 		echo.
-		echo [REPACKING] [VENDOR] - [product.img] >> %current%\project_files\data\log_recompile
-		%bin%\make_ext4fs -L product -T -1 -S %current%\project_files\data\product_file_contexts -C %current%\project_files\data\product_fs_config -l %product_size% -a product %current%\ROM\product.img %current%\ROM\product\ >nul 2>nul >> Project\project_files\data\log_recompile
-		echo [REPACKING SUCCESSFULL] >> %current%\project_files\data\log_recompile
+		echo [REPACKING] [VENDOR] - [product.img] >> %current%\_project_files\data\log_recompile
+		%bin%\make_ext4fs -L product -T -1 -S %current%\_project_files\data\product_file_contexts -C %current%\_project_files\data\product_fs_config -l %product_size% -a product %current%\product.img %current%\product\ >nul 2>nul >> Project\_project_files\data\log_recompile
+		echo [REPACKING SUCCESSFULL] >> %current%\_project_files\data\log_recompile
 	)
 	echo Complete
 	pause>nul
@@ -526,8 +498,8 @@ setlocal enabledelayedexpansion
 	%cl%   {47} Tar tool{#}
 	echo.
 	echo.
-	if exist "%current%\ROM\*.lz4" (
-		if exist "%current%\ROM\*.lz4" (
+	if exist "%current%\*.lz4" (
+		if exist "%current%\*.lz4" (
 			%cl%   {09}1] Individual compilation{#}
 			echo.
 			%cl%   {07}2] Compile all .lz4 files{#} 
@@ -538,7 +510,7 @@ setlocal enabledelayedexpansion
 			echo.
 		)
 	) else (
-		%cl%   No .lz4 files found in {03}[%current%\ROM]{#}
+		%cl%   No .lz4 files found in {03}[%current%]{#}
 		echo.
 		pause>nul
 		goto menu_de_compilacion
@@ -560,7 +532,7 @@ setlocal enabledelayedexpansion
 	echo.
 	echo.
 	set count=0
-	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\ROM\*.lz4') do (
+	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\*.lz4') do (
 		set /a count=!count!+1
 		if !count! leq 9 echo   !count!] %%~nf%%~xf
 		if !count! geq 10 if !count! leq 99 echo   !count! ] %%~nf%%~xf
@@ -577,7 +549,7 @@ setlocal enabledelayedexpansion
 	set filenumber=%filenumber:"=x%
 	IF "!filenumber!"=="b" goto compilar_tar_menu
 	set count=0
-	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\ROM\*.lz4 ^| !busybox! tr / \\') do (
+	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\*.lz4 ^| !busybox! tr / \\') do (
 		set /a count=!count!+1
 		if !count! ==%filenumber% (
 			set lz4=%%f
@@ -586,13 +558,13 @@ setlocal enabledelayedexpansion
 			%cl%   {03}Compiling{#} !lz4_base!...
 			echo.
 			set main_dir="%cd%%"
-			cd %current%\ROM
+			cd %current%
 			call cd %%~dpf
 			call !main_dir!\tools\plugins\tar_tool\tar --create --format=gnu -b20 --quoting-style=escape --owner=0 --group=0 --totals --mode=644  -f %%~nf.tar %%~nxf >nul 2>nul
 		)
 	)
 	cd %~dp0 >nul 2>nul
-	if exist "%current%\ROM\*.tar" (
+	if exist "%current%\*.tar" (
 		%cl%   {02}Compiled successfully{#}
 		echo.
 	) else (
@@ -612,16 +584,16 @@ setlocal enabledelayedexpansion
 	echo.
 	%cl%   {03}searching{#} .lz4 files
 	echo.
-	for /r %current%\ROM %%a in (*.lz4) do (
+	for /r %current% %%a in (*.lz4) do (
 		echo   %%~na%%~xa
 	)
 	set main_dir="%cd%%"
-	cd %current%\ROM
+	cd %current%
 	call !main_dir!\tools\plugins\tar_tool\ls *.lz4 > files.txt
 	call !main_dir!\tools\plugins\tar_tool\tar --create --format=gnu -b20 --quoting-style=escape --owner=0 --group=0 --totals --mode=644  -f tar_files.tar -T files.txt >nul 2>nul
 	del /q files.txt
 	cd %~dp0
-	if exist "%current%\ROM\tar_files.tar" (
+	if exist "%current%\tar_files.tar" (
 		echo.
 		%cl%   {03}Compiled successfully{#}
 		echo.
@@ -633,9 +605,9 @@ setlocal enabledelayedexpansion
 	pause>nul
 	goto compilar_tar_menu
 :borrar_lz4
-	del %current%\ROM\*.lz4 >nul 2>nul
+	del %current%\*.lz4 >nul 2>nul
 :compilar_md5_menu
-	if exist "%current%\ROM\*.tar" (
+	if exist "%current%\*.tar" (
 		goto compilar_md5_individual
 	) else (
 		cls
@@ -645,7 +617,7 @@ setlocal enabledelayedexpansion
 		%cl%   {47} compile md5 menu {#}
 		echo.
 		echo.
-		%cl%   No {03}.tar{#} files found in {03}[%current%\ROM]{#}
+		%cl%   No {03}.tar{#} files found in {03}[%current%]{#}
 		echo.
 		%cl%   {06}b] Back{#}
 		echo.
@@ -666,7 +638,7 @@ setlocal enabledelayedexpansion
 	echo.
 	echo.
 	set count=0
-	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\ROM\*.tar') do (
+	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\*.tar') do (
 		set /a count=!count!+1
 		if !count! leq 9 echo   !count!] %%~nf%%~xf
 		if !count! geq 10 if !count! leq 99 echo   !count! ] %%~nf%%~xf
@@ -683,7 +655,7 @@ setlocal enabledelayedexpansion
 	set filenumber=%filenumber:"=x%
 	IF "!filenumber!"=="b" goto menu_de_compilacion
 	set count=0
-	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\ROM\*.tar ^| !busybox! tr / \\') do (
+	for /f "delims=" %%f in ('dir /s /a:-d /b  %current%\*.tar ^| !busybox! tr / \\') do (
 		set /a count=!count!+1
 		if !count! ==%filenumber% (
 			set tar=%%f
@@ -692,14 +664,14 @@ setlocal enabledelayedexpansion
 			%cl%   {03}Compiling{#} !tar_base!...
 			echo.
 			set main_dir="%cd%%"
-			cd %current%\ROM
+			cd %current%
 			call cd %%~dpf
 			call !main_dir!\tools\plugins\md5_tool\md5sum -t %%~nxf >> %%~nxf
     	    call !main_dir!\tools\plugins\md5_tool\mv %%~nxf %%~nxf.md5
 		)
 	)
 	cd %~dp0 >nul 2>nul
-	if exist "%current%\ROM\*.md5" (
+	if exist "%current%\*.md5" (
 		%cl%   {02}Compiled successfully{#}
 		echo.
 	) else (
@@ -718,16 +690,16 @@ setlocal enabledelayedexpansion
 	echo.
 	%cl%   {03}searching{#} .md5 files
 	echo.
-	for /r %current%\ROM %%a in (*.tar) do (
+	for /r %current% %%a in (*.tar) do (
 		echo   %%~na%%~xa
 	)
 	set main_dir="%cd%%"
-	cd %current%\ROM
+	cd %current%
 	call !main_dir!\tools\plugins\tar_tool\ls * > files.txt
 	call !main_dir!\tools\plugins\tar_tool\tar --create --format=gnu -b20 --quoting-style=escape --owner=0 --group=0 --totals --mode=644  -f tar_files.tar -T files.txt >nul 2>nul
 	del /q files.txt
 	cd %~dp0
-	if exist "%current%\ROM\tar_files.tar" (
+	if exist "%current%\tar_files.tar" (
 		echo.
 		%cl%   {03}Compiled successfully{#}
 		echo.
@@ -739,7 +711,7 @@ setlocal enabledelayedexpansion
 	pause>nul
 	goto compilar_tar_menu
 :borrar_md5
-	del %current%\ROM\*.md5 >nul 2>nul
+	del %current%\*.md5 >nul 2>nul
 :compilar_zip
 	cls
 	title Scarlett Kitchen - Build zip
@@ -751,10 +723,10 @@ setlocal enabledelayedexpansion
 	echo.
 	%cl%   Packing img files to {03}%zip_name%.zip{#}...
 	echo.
-	%bin%\7z a %current%\ROM\!zip_name!.zip .\%current%\ROM\*.img >nul 2>nul
+	%bin%\7z a %current%\!zip_name!.zip .\%current%\*.img >nul 2>nul
 	%cl%   Signing {03}%zip_name%{#}...
 	echo.
-	%bin%\7z a %current%\ROM\!zip_name!.zip .\%current%\ROM\META-INF >nul 2>nul
+	%bin%\7z a %current%\!zip_name!.zip .\%current%\META-INF >nul 2>nul
 	echo.
 	%cl%   Compilation {02}Successful{#}...
 	echo.
@@ -763,15 +735,15 @@ setlocal enabledelayedexpansion
 
 
 :generar_meta
-	if exist "%current%\ROM\META-INF" (
-		del /s /q "%current%\ROM\META-INF" >nul
+	if exist "%current%\META-INF" (
+		del /s /q "%current%\META-INF" >nul
 	)
 	for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.incremental="') do ( set "pda=%%#")
 	for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.system.model="') do ( set "modelo=%%#")
 	for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "project_name="') do ( set "project_name=%%#")
 	for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "user_name="') do ( set "user_name=%%#")
-    xcopy /y tools\build\system_root %current%\ROM /s >nul 2>nul
-    set updater-script=%current%\ROM\META-INF\com\google\android\updater-script
+    xcopy /y tools\build\system_root %current% /s >nul 2>nul
+    set updater-script=%current%\META-INF\com\google\android\updater-script
 	%bin%\sfk replace %updater-script% "/#ROMNAME/%project_name%/" -yes > nul
 	%bin%\sfk replace %updater-script% "/#PDA/%pda%/" -yes > nul
 	%bin%\sfk replace %updater-script% "/#AUTHOR/%user_name%/" -yes > nul
@@ -789,9 +761,9 @@ setlocal enabledelayedexpansion
 	set /p project_name=1) Project name: 
 	set project_name=%project_name: =_%
     set /p user_name=2) User name: 
-	set user_data=%project_name%\project_files\data\user_data
-	mkdir %project_name%\project_files\data
-	echo -------------------------->%project_name%\project_files\data\user_data
+	set user_data=%project_name%\_project_files\data\user_data
+	mkdir %project_name%\_project_files\data
+	echo -------------------------->%project_name%\_project_files\data\user_data
 	echo User data>>!user_data!
     echo -------------------------->>!user_data!
     echo project_name=%project_name%>>!user_data!
@@ -828,8 +800,8 @@ setlocal enabledelayedexpansion
 	echo.
 	set /p select=# Select any option: 
 	if "!select!"=="1" (
-		if exist %current%\ROM\system\system\build.prop (
-			%bin%\note %current%\ROM\system\system\build.prop
+		if exist %current%\system\system\build.prop (
+			%bin%\note %current%\system\system\build.prop
 			goto abrir_archivos_del_proyecto
 		) else (
 			cls
@@ -840,8 +812,8 @@ setlocal enabledelayedexpansion
 		)
 	)
 	if "!select!"=="2" (
-		if exist %current%\ROM\META-INF\com\google\android\updater-script (
-			%bin%\note %current%\ROM\META-INF\com\google\android\updater-script
+		if exist %current%\META-INF\com\google\android\updater-script (
+			%bin%\note %current%\META-INF\com\google\android\updater-script
 			goto abrir_archivos_del_proyecto
 		) else (
 			cls
@@ -852,8 +824,8 @@ setlocal enabledelayedexpansion
 		)
 	)
 	if "!select!"=="3" (
-		if exist %current%\ROM\META-INF\com\google\android\aroma-config (
-			%bin%\note %current%\ROM\META-INF\com\google\android\aroma-config
+		if exist %current%\META-INF\com\google\android\aroma-config (
+			%bin%\note %current%\META-INF\com\google\android\aroma-config
 			goto abrir_archivos_del_proyecto
 		) else (
 			cls
@@ -864,12 +836,12 @@ setlocal enabledelayedexpansion
 		)
 	)
 	if "!select!"=="4" (
-		if exist %current%\ROM\vendor\etc\floating-feature.xml (
-			%bin%\note %current%\ROM\vendor\etc\floating-feature.xml
+		if exist %current%\vendor\etc\floating-feature.xml (
+			%bin%\note %current%\vendor\etc\floating-feature.xml
 			goto abrir_archivos_del_proyecto
 		)
-		if exist %current%\ROM\vendor\etc\floating_feature.xml (
-			%bin%\note %current%\ROM\vendor\etc\floating_feature.xml
+		if exist %current%\vendor\etc\floating_feature.xml (
+			%bin%\note %current%\vendor\etc\floating_feature.xml
 		) else (
 			cls
 			%cl% Error: {04}floating-feature.xml not found{#}
@@ -879,8 +851,8 @@ setlocal enabledelayedexpansion
 		)
 	)
 	if "!select!"=="5" (
-		if exist %current%\ROM\system\system\cameradata\camera-feature.xml (
-			%bin%\note %current%\ROM\system\system\cameradata\camera-feature.xml
+		if exist %current%\system\system\cameradata\camera-feature.xml (
+			%bin%\note %current%\system\system\cameradata\camera-feature.xml
 			goto abrir_archivos_del_proyecto
 		) else (
 			cls
@@ -891,8 +863,8 @@ setlocal enabledelayedexpansion
 		)
 	)
 	if "!select!"=="6" (
-		if exist %current%\ROM\system\system (
-			%systemroot%\explorer.exe %current%\ROM\system\system
+		if exist %current%\system\system (
+			%systemroot%\explorer.exe %current%\system\system
 			goto abrir_archivos_del_proyecto
 		) else (
 			cls
@@ -946,7 +918,7 @@ setlocal enabledelayedexpansion
 
 :: --- --- --- 5) Extraer Firmware --- --- --- ::
 :buscar_decompilacion_anterior
-	if exist "%current%\tmp\*.md5" (
+	if exist "%current%\*.md5" (
 		cls
 		call :banner
 		%cl%   {47} MD5 Files detect {#}
@@ -959,7 +931,7 @@ setlocal enabledelayedexpansion
 		if "!select!"=="y" goto borrar_decompilacion_anterior
 		if "!select!"=="n" goto decompilar_lz4
 	)
-	if exist "%current%\tmp\*.lz4" (
+	if exist "%current%\*.lz4" (
 		cls
 		call :banner
 		%cl%   {47} LZ4 Files detect {#}
@@ -972,7 +944,7 @@ setlocal enabledelayedexpansion
 		if "!select!"=="y" goto borrar_decompilacion_anterior
 		if "!select!"=="n" goto decompilar_img	
 	)
-	if exist "%current%\tmp\*.img" (
+	if exist "%current%\*.img" (
 		cls
 		call :banner
 		%cl%   {47} IMG Files detect {#}
@@ -988,55 +960,26 @@ setlocal enabledelayedexpansion
 
 :borrar_decompilacion_anterior
 	:: --- --- --- Borrar tmp anterior (si existe) --- --- --- ::
-	if exist "%current%\tmp" (
-		rd /s /q "%current%\tmp" >nul
+	if exist "%current%" (
+		rd /s /q "%current%" >nul
 	)
 	:: --- --- --- Borrar log anterior (si existe) --- --- --- ::
-	if exist %current%\project_files\data\decompile.log (
-		del %current%\project_files\data\decompile.log >nul 2>nul
+	if exist %current%\_project_files\data\decompile.log (
+		del %current%\_project_files\data\decompile.log >nul 2>nul
 	)
 :decompilacion_base
-	:: --- --- --- creando data anterior (si no existe) --- --- --- ::
-	if not exist %current%\project_files\data (
-		mkdir %current%\project_files\data >nul 2>nul
-	)
-	title Scarlett Kitchen - Decompiler Samsung Firmware
-	echo [%time%] [LOG STARTED]>>%current%\project_files\data\decompile.log
-	set log_decompile=%current%\project_files\data\decompile.log
-    mkdir %current%\tmp
-    cls
-    call :banner
-	%cl%   {4F}Select your Firmware{#}     	
-	echo.     	
-	echo.
-    echo. 	
-	echo.
-    set dialog="about:<input type=file id=FILE><script>FILE.click();new ActiveXObject
-    set dialog=%dialog%('Scripting.FileSystemObject').GetStandardStream(1).WriteLine(FILE.value);
-    set dialog=%dialog%close();resizeTo(0,0);</script>"
-    for /f "tokens=* delims=" %%a in ('mshta %dialog%') do (
-	set "filename=%%~nxa"
-	set "file=%%a"
-	set "file_format=%%~xa"
-	)
-	:: --- --- --- Prevencion en caso de cierre --- --- --- ::
-	if not exist !file! (
-		rd /s /q "%current%\tmp" >nul 2>nul
-		goto home
-	)
-	:: --- --- --- Decompilacion del zip --- --- --- ::
 	cls
 	title Scarlett Kitchen - Extrating  [MD5 FILES]
     call :banner
     %cl%   {4f} Please wait, decompresing Zip file {#}     	
     echo.
-    %cl%   {0f}%filename%{#}
+    %cl%   {0f}%file_rom_base%{#}
     echo.
-    :: Extraccion de archivos especificos para optimizar la decompilacion (MD5 FILES)
-	echo [%TIME%] [EXTRACTED] - [ZIP] - [%filename%]>>!log_decompile!
-	%bin%\7z x "%file%" -o"%current%\tmp" AP_*.tar.md5 -r >nul
-	%bin%\7z x "%file%" -o"%current%\tmp" CSC_*.tar.md5 -r >nul
-	%bin%\7z x "%file%" -o"%current%\tmp" BL_*.tar.md5 -r >nul
+	%bin%\7z x "%file_rom%" -o"%current%" AP_*.tar.md5 -r >nul
+	%bin%\7z x "%file_rom%" -o"%current%" CSC_*.tar.md5 -r >nul
+	%bin%\7z x "%file_rom%" -o"%current%" BL_*.tar.md5 -r >nul
+	if exist %current%\*.md5 ( goto decompilar_lz4 )
+	if exist %current%\*.lz4 ( goto decompilar_img )
 	goto decompilar_lz4
 
 :decompilar_lz4
@@ -1045,127 +988,127 @@ setlocal enabledelayedexpansion
     call :banner
     %cl%   {4F}Extrating Lz4 files from:{#}     	
 	echo.
-	for /r %current%\tmp %%a in (*.md5) do (
-	%cl%   {0f}%%~na%%~xa{#}     	
-	echo.
-	:: --- --- --- normal --- --- --- ::
-	%bin%\7z x "%%a" -o"%current%\tmp" system.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" vendor.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" product.img.lz4 -r >nul
-	:: --- --- --- snapdragon --- --- --- ::
-	%bin%\7z x "%%a" -o"%current%\tmp" system.img.ext4.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" vendor.img.ext4.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" product.img.ext4.lz4 -r >nul
-	:: --- --- --- super img --- --- --- ::
-	%bin%\7z x "%%a" -o"%current%\tmp" super.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" prism.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" odm.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" optics.img.lz4 -r >nul
-	:: --- --- --- extras --- --- --- ::
-	%bin%\7z x "%%a" -o"%current%\tmp" *param.bin.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" boot.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" dt.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" dtbo.img.lz4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" recovery.img.lz4 -r >nul
-	echo [%TIME%] [EXTRACTED] - [MD5] - [%%~na%%~xa]>>!log_decompile!
+	for /r %current% %%a in (*.md5) do (
+		%cl%   {0f}%%~na%%~xa{#}     	
+		echo.
+		:: --- --- --- normal --- --- --- ::
+		%bin%\7z x "%%a" -o"%current%" system.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" vendor.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" product.img.lz4 -r >nul
+		:: --- --- --- snapdragon --- --- --- ::
+		%bin%\7z x "%%a" -o"%current%" system.img.ext4.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" vendor.img.ext4.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" product.img.ext4.lz4 -r >nul
+		:: --- --- --- super img --- --- --- ::
+		%bin%\7z x "%%a" -o"%current%" super.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" prism.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" odm.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" optics.img.lz4 -r >nul
+		:: --- --- --- extras --- --- --- ::
+		%bin%\7z x "%%a" -o"%current%" *param.bin.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" boot.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" dt.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" dtbo.img.lz4 -r >nul
+		%bin%\7z x "%%a" -o"%current%" recovery.img.lz4 -r >nul
+		echo [%TIME%] [EXTRACTED] - [MD5] - [%%~na%%~xa]>>!log_decompile!
 	)
 	:: --- --- --- Registro del log --- --- --- ::
-	if exist %current%\tmp\system.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [system.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\vendor.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [vendor.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\product.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [product.img.lz4]>>!log_decompile!
+	if exist %current%\system.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [system.img.lz4]>>!log_decompile!
+	if exist %current%\vendor.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [vendor.img.lz4]>>!log_decompile!
+	if exist %current%\product.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [product.img.lz4]>>!log_decompile!
 	:: --- --- --- super.img --- --- --- ::
-	if exist %current%\tmp\super.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [super.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\prism.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [prism.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\odm.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [odm.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\optics.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [optics.img.lz4]>>!log_decompile!
+	if exist %current%\super.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [super.img.lz4]>>!log_decompile!
+	if exist %current%\prism.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [prism.img.lz4]>>!log_decompile!
+	if exist %current%\odm.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [odm.img.lz4]>>!log_decompile!
+	if exist %current%\optics.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [optics.img.lz4]>>!log_decompile!
 	:: --- --- --- snapdragon --- --- --- ::
-	if exist %current%\tmp\system.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [system.img.ext4.lz4]>>!log_decompile!
-	if exist %current%\tmp\vendor.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [vendor.img.ext4.lz4]>>!log_decompile!
-	if exist %current%\tmp\product.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [product.img.ext4.lz4]>>!log_decompile!
+	if exist %current%\system.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [system.img.ext4.lz4]>>!log_decompile!
+	if exist %current%\vendor.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [vendor.img.ext4.lz4]>>!log_decompile!
+	if exist %current%\product.img.ext4.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [product.img.ext4.lz4]>>!log_decompile!
 	:: --- --- --- extras --- --- --- ::
-	if exist %current%\tmp\dt.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [dt.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\dtbo.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [dtbo.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\recovery.img.lz4 echo [%TIME%] [EXTRACTED]  - [LZ4] - [recovery.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\boot.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [boot.img.lz4]>>!log_decompile!
-	if exist %current%\tmp\*param.bin.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [param.bin.lz4]>>!log_decompile!
+	if exist %current%\dt.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [dt.img.lz4]>>!log_decompile!
+	if exist %current%\dtbo.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [dtbo.img.lz4]>>!log_decompile!
+	if exist %current%\recovery.img.lz4 echo [%TIME%] [EXTRACTED]  - [LZ4] - [recovery.img.lz4]>>!log_decompile!
+	if exist %current%\boot.img.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [boot.img.lz4]>>!log_decompile!
+	if exist %current%\*param.bin.lz4 echo [%TIME%] [EXTRACTED] - [LZ4] - [param.bin.lz4]>>!log_decompile!
 	goto decompilar_img
 
 :decompilar_img
 	cls
 	title Scarlett Kitchen - Extrating  [IMG FILES]
     call :banner
-	del "%current%\tmp\*.md5" >nul 2>nul
+	del "%current%\*.md5" >nul 2>nul
     %cl%   {4F}Extrating img files from: {#}     	
 	echo.
-	for /r %current%\tmp %%a in (*.lz4) do (
+	for /r %current% %%a in (*.lz4) do (
 	%cl%   {0f}%%~na%%~xa{#}
 	echo.
-	%bin%\7z x "%%a" -o"%current%\tmp" system.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" vendor.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" product.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" system.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" vendor.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" product.img -r >nul
 	:: --- --- --- snapdragon --- --- --- ::
-	%bin%\7z x "%%a" -o"%current%\tmp" system.img.ext4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" vendor.img.ext4 -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" product.img.ext4 -r >nul
+	%bin%\7z x "%%a" -o"%current%" system.img.ext4 -r >nul
+	%bin%\7z x "%%a" -o"%current%" vendor.img.ext4 -r >nul
+	%bin%\7z x "%%a" -o"%current%" product.img.ext4 -r >nul
 	:: --- --- --- super img --- --- --- ::
-	%bin%\7z x "%%a" -o"%current%\tmp" super.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" prism.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" optics.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" odm.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" super.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" prism.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" optics.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" odm.img -r >nul
 	:: --- --- --- extras --- --- --- ::
-	%bin%\7z x "%%a" -o"%current%\tmp" dt.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" dtbo.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" recovery.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" boot.img -r >nul
-	%bin%\7z x "%%a" -o"%current%\tmp" *param.bin -r >nul
+	%bin%\7z x "%%a" -o"%current%" dt.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" dtbo.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" recovery.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" boot.img -r >nul
+	%bin%\7z x "%%a" -o"%current%" *param.bin -r >nul
 	)
 	:: --- --- --- Registro del log --- --- --- ::
-	if exist %current%\tmp\system.img echo [%TIME%] [EXTRACTED] - [IMG] - [system.img]>>!log_decompile!
-	if exist %current%\tmp\vendor.img echo [%TIME%] [EXTRACTED] - [IMG] - [vendor.img]>>!log_decompile!
-	if exist %current%\tmp\product.img echo [%TIME%] [EXTRACTED] - [IMG] - [product.img]>>!log_decompile!
+	if exist %current%\system.img echo [%TIME%] [EXTRACTED] - [IMG] - [system.img]>>!log_decompile!
+	if exist %current%\vendor.img echo [%TIME%] [EXTRACTED] - [IMG] - [vendor.img]>>!log_decompile!
+	if exist %current%\product.img echo [%TIME%] [EXTRACTED] - [IMG] - [product.img]>>!log_decompile!
 	:: --- --- --- snapdragon --- --- --- ::
-	if exist %current%\tmp\system.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [system.img.ext4]>>!log_decompile!
-	if exist %current%\tmp\vendor.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [vendor.img.ext4]>>!log_decompile!
-	if exist %current%\tmp\product.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [product.img.ext4]>>!log_decompile!
+	if exist %current%\system.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [system.img.ext4]>>!log_decompile!
+	if exist %current%\vendor.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [vendor.img.ext4]>>!log_decompile!
+	if exist %current%\product.img.ext4 echo [%TIME%] [EXTRACTED] - [EXT4] - [product.img.ext4]>>!log_decompile!
 	:: --- --- --- super.img --- --- --- ::
-	if exist %current%\tmp\super.img echo [%TIME%] [EXTRACTED] - [IMG] - [super.img]>>!log_decompile!
-	if exist %current%\tmp\prism.img echo [%TIME%] [EXTRACTED] - [IMG] - [prism.img]>>!log_decompile!
-	if exist %current%\tmp\odm.img echo [%TIME%] [EXTRACTED] - [IMG] - [odm.img]>>!log_decompile!
-	if exist %current%\tmp\optics.img echo [%TIME%] [EXTRACTED] - [IMG] - [optics.img]>>!log_decompile!
+	if exist %current%\super.img echo [%TIME%] [EXTRACTED] - [IMG] - [super.img]>>!log_decompile!
+	if exist %current%\prism.img echo [%TIME%] [EXTRACTED] - [IMG] - [prism.img]>>!log_decompile!
+	if exist %current%\odm.img echo [%TIME%] [EXTRACTED] - [IMG] - [odm.img]>>!log_decompile!
+	if exist %current%\optics.img echo [%TIME%] [EXTRACTED] - [IMG] - [optics.img]>>!log_decompile!
 	:: --- --- --- extras --- --- --- ::
-	if exist %current%\tmp\dt.img echo [%TIME%] [EXTRACTED] - [IMG] - [dt.img]>>!log_decompile!
-	if exist %current%\tmp\dtbo.img echo [%TIME%] [EXTRACTED] - [IMG] - [dtbo.img]>>!log_decompile!
-	if exist %current%\tmp\recovery.img echo [%TIME%] [EXTRACTED] - [IMG] - [recovery.img]>>!log_decompile!
-	if exist %current%\tmp\boot.img echo [%TIME%] [EXTRACTED] - [IMG] - [boot.img]>>!log_decompile!
-	if exist %current%\tmp\*param.bin echo [%TIME%] [EXTRACTED] - [BIN] - [param.bin]>>!log_decompile!
+	if exist %current%\dt.img echo [%TIME%] [EXTRACTED] - [IMG] - [dt.img]>>!log_decompile!
+	if exist %current%\dtbo.img echo [%TIME%] [EXTRACTED] - [IMG] - [dtbo.img]>>!log_decompile!
+	if exist %current%\recovery.img echo [%TIME%] [EXTRACTED] - [IMG] - [recovery.img]>>!log_decompile!
+	if exist %current%\boot.img echo [%TIME%] [EXTRACTED] - [IMG] - [boot.img]>>!log_decompile!
+	if exist %current%\*param.bin echo [%TIME%] [EXTRACTED] - [BIN] - [param.bin]>>!log_decompile!
 
-	if exist %current%\tmp\super.img (
+	if exist %current%\super.img (
 		goto decompilar_super
 	)
-	if exist %current%\tmp\system.img.ext4 (
+	if exist %current%\system.img.ext4 (
 		goto renombrar_ext4
 	) else (
 		goto convertir_a_sparse
 	)
 :renombrar_ext4
-	del "%current%\tmp\*.lz4" >nul 2>nul
-	if exist %current%\tmp\system.img.ext4 ren %current%\tmp\system.img.ext4 system.img
-	if exist %current%\tmp\system.img echo [%TIME%] [EXTRACTED] - [IMG] - [system.img]>>!log_decompile!
-	if exist %current%\tmp\vendor.img.ext4 ren %current%\tmp\vendor.img.ext4 vendor.img
-	if exist %current%\tmp\vendor.img echo [%TIME%] [EXTRACTED] - [IMG] - [vendor.img]>>!log_decompile!
-	if exist %current%\tmp\product.img.ext4 ren %current%\tmp\product.img.ext4 product.img
-	if exist %current%\tmp\product.img echo [%TIME%] [EXTRACTED] - [IMG] - [product.img]>>!log_decompile!
+	del "%current%\*.lz4" >nul 2>nul
+	if exist %current%\system.img.ext4 ren %current%\system.img.ext4 system.img
+	if exist %current%\system.img echo [%TIME%] [EXTRACTED] - [IMG] - [system.img]>>!log_decompile!
+	if exist %current%\vendor.img.ext4 ren %current%\vendor.img.ext4 vendor.img
+	if exist %current%\vendor.img echo [%TIME%] [EXTRACTED] - [IMG] - [vendor.img]>>!log_decompile!
+	if exist %current%\product.img.ext4 ren %current%\product.img.ext4 product.img
+	if exist %current%\product.img echo [%TIME%] [EXTRACTED] - [IMG] - [product.img]>>!log_decompile!
 	goto convertir_a_sparse
 :decompilar_super
 	cls
 	title Scarlett Kitchen - Extrating  [RAW FILES]
     call :banner
-	del "%current%\tmp\*.lz4" >nul 2>nul
+	del "%current%\*.lz4" >nul 2>nul
     %cl%   {4F}Converting to img_raw...{#}
 	echo.
     %cl%   {0f}super.img{#}     	
 	echo.
-	%bin%\super %current%\tmp\super.img %current%\tmp\super.raw >nul 2>nul
+	%bin%\super %current%\super.img %current%\super.raw >nul 2>nul
 	echo [%TIME%] [EXTRACTED]  - [RAW]- [super.img]>>!log_decompile!
 	goto decompilar_ext
 	:: EXTRACCION DEL LOS EXT 
@@ -1175,87 +1118,87 @@ setlocal enabledelayedexpansion
     call :banner
     %cl%   {4F}Extrating .ext files...{#}     	
 	echo.
-	del %current%\tmp\super.img >nul 2>nul
-	if exist "%current%\tmp\super.raw" (
+	del %current%\super.img >nul 2>nul
+	if exist "%current%\super.raw" (
 		echo   system.img
-		%bin%\7z x "%current%\tmp\super.raw" -o"%current%\tmp" 2.ext -t# >nul 2>nul
-		ren %current%\tmp\2.ext system_sparse.img
+		%bin%\7z x "%current%\super.raw" -o"%current%" 2.ext -t# >nul 2>nul
+		ren %current%\2.ext system_sparse.img
 		echo   vendor.img
-		%bin%\7z x "%current%\tmp\super.raw" -o"%current%\tmp" 4.ext -t# >nul 2>nul
-		ren %current%\tmp\4.ext vendor_sparse.img
+		%bin%\7z x "%current%\super.raw" -o"%current%" 4.ext -t# >nul 2>nul
+		ren %current%\4.ext vendor_sparse.img
 		echo   product.img
-		%bin%\7z x "%current%\tmp\super.raw" -o"%current%\tmp" 6.ext -t# >nul 2>nul
-		ren %current%\tmp\6.ext product_sparse.img
+		%bin%\7z x "%current%\super.raw" -o"%current%" 6.ext -t# >nul 2>nul
+		ren %current%\6.ext product_sparse.img
 		echo   odm.img
-		%bin%\7z x "%current%\tmp\super.raw" -o"%current%\tmp" 8.ext -t# >nul 2>nul
-		ren %current%\tmp\8.ext odm_sparse.img
+		%bin%\7z x "%current%\super.raw" -o"%current%" 8.ext -t# >nul 2>nul
+		ren %current%\8.ext odm_sparse.img
 		echo   optics
-		%bin%\simg2img %current%\tmp\optics.img %current%\tmp\optics_sparse.img >nul 2>nul
+		%bin%\simg2img %current%\optics.img %current%\optics_sparse.img >nul 2>nul
 		pause>nul
 		echo   prism
-		ren %current%\tmp\prism.img prism_sparse.img
+		ren %current%\prism.img prism_sparse.img
 	)
 	goto extraer_carpetas
 :convertir_a_sparse
 	cls
 	title Scarlett Kitchen - Converting to  [SPARSE]
     call :banner
-	del "%current%\tmp\*.lz4" >nul 2>nul
+	del "%current%\*.lz4" >nul 2>nul
     %cl%   {4F}Converting to sparse...{#}
 	echo.     
-	if exist %current%\tmp\system.img (
+	if exist %current%\system.img (
 		echo   system.img
-		%bin%\simg2img %current%\tmp\system.img %current%\tmp\system_sparse.img >nul 2>nul
+		%bin%\simg2img %current%\system.img %current%\system_sparse.img >nul 2>nul
 	)
-	if exist %current%\tmp\system_sparse.img ( 
+	if exist %current%\system_sparse.img ( 
 		echo [%TIME%] [CONVERTED] - [SPARSE] - [system.img]>>!log_decompile!
-		del %current%\tmp\system.img
-		ren %current%\tmp\system_sparse.img system.img
+		del %current%\system.img
+		ren %current%\system_sparse.img system.img
 	)
-	if exist %current%\tmp\vendor.img (
+	if exist %current%\vendor.img (
 		echo   vendor.img
-		%bin%\simg2img %current%\tmp\vendor.img %current%\tmp\vendor_sparse.img >nul 2>nul
+		%bin%\simg2img %current%\vendor.img %current%\vendor_sparse.img >nul 2>nul
 	)
-	if exist %current%\tmp\vendor_sparse.img ( 
+	if exist %current%\vendor_sparse.img ( 
 		echo [%TIME%] [CONVERTED] - [SPARSE] - [vendor.img]>>!log_decompile!
-		del %current%\tmp\vendor.img
-		ren %current%\tmp\vendor_sparse.img vendor.img
+		del %current%\vendor.img
+		ren %current%\vendor_sparse.img vendor.img
 	)
-	if exist %current%\tmp\product.img (
+	if exist %current%\product.img (
 		echo   product.img
-		%bin%\simg2img %current%\tmp\product.img %current%\tmp\product_sparse.img >nul 2>nul
+		%bin%\simg2img %current%\product.img %current%\product_sparse.img >nul 2>nul
 	)
-	if exist %current%\tmp\product_sparse.img (
+	if exist %current%\product_sparse.img (
 		echo [%TIME%] [CONVERTED] - [SPARSE] - [product.img]>>!log_decompile!
-		del %current%\tmp\product.img
-		ren %current%\tmp\product_sparse.img product.img
+		del %current%\product.img
+		ren %current%\product_sparse.img product.img
 	)
-	if exist %current%\tmp\optics.img (
+	if exist %current%\optics.img (
 		echo   optics.img
-		%bin%\simg2img %current%\tmp\optics.img %current%\tmp\optics_sparse.img >nul 2>nul
+		%bin%\simg2img %current%\optics.img %current%\optics_sparse.img >nul 2>nul
 	)
-	if exist %current%\tmp\optics_sparse.img (
+	if exist %current%\optics_sparse.img (
 		echo [%TIME%] [CONVERTED] - [SPARSE] - [optics.img]>>!log_decompile!
-		del %current%\tmp\optics.img
-		ren %current%\tmp\optics_sparse.img optics.img
+		del %current%\optics.img
+		ren %current%\optics_sparse.img optics.img
 	)
-	if exist %current%\tmp\prism.img (
+	if exist %current%\prism.img (
 		echo   prism.img
-		%bin%\simg2img %current%\tmp\prism.img %current%\tmp\prism_sparse.img >nul 2>nul
+		%bin%\simg2img %current%\prism.img %current%\prism_sparse.img >nul 2>nul
 	)
-	if exist %current%\tmp\prism_sparse.img (
+	if exist %current%\prism_sparse.img (
 		echo [%TIME%] [CONVERTED] - [SPARSE] - [prism.img]>>!log_decompile!
-		del %current%\tmp\prism.img
-		ren %current%\tmp\prism_sparse.img prism.img
+		del %current%\prism.img
+		ren %current%\prism_sparse.img prism.img
 	)
-	if exist %current%\tmp\odm.img (
+	if exist %current%\odm.img (
 		echo   odm.img
-		%bin%\simg2img %current%\tmp\odm.img %current%\tmp\prism_sparse.img >nul 2>nul
+		%bin%\simg2img %current%\odm.img %current%\prism_sparse.img >nul 2>nul
 	)
-	if exist %current%\tmp\odm_sparse.img (
+	if exist %current%\odm_sparse.img (
 		echo [%TIME%] [CONVERTED] - [SPARSE] - [odm.img]>>!log_decompile!
-		del %current%\tmp\odm.img
-		ren %current%\tmp\odm_sparse.img odm.img
+		del %current%\odm.img
+		ren %current%\odm_sparse.img odm.img
 	)
 	goto extraer_carpetas
 
@@ -1265,86 +1208,80 @@ setlocal enabledelayedexpansion
     call :banner
     %cl%   {4F}Extrating project folders...{#}
 	echo.
-	del %current%\tmp\super.img >nul 2>nul
-	if exist "%current%\tmp\system.img" (
-		mkdir %current%\ROM\system >nul 2>nul
+	del %current%\super.img >nul 2>nul
+	if exist "%current%\system.img" (
+		mkdir %current%\system >nul 2>nul
 		echo   system
-		%bin%\imgextractor %current%\tmp\system.img %current%\ROM\system >nul 2>nul
+		%bin%\imgextractor %current%\system.img %current%\system >nul 2>nul
 		echo [%TIME%] [EXTRACTED] - [FOLDER] - [system]>>!log_decompile!
-		REM del "%current%\tmp\system_sparse.img" >nul 2>nul
 	)
-	if exist "%current%\tmp\vendor.img" (
-		mkdir %current%\ROM\vendor >nul 2>nul
+	if exist "%current%\vendor.img" (
+		mkdir %current%\vendor >nul 2>nul
 		echo   vendor
-		%bin%\imgextractor %current%\tmp\vendor.img %current%\ROM\vendor >nul 2>nul
+		%bin%\imgextractor %current%\vendor.img %current%\vendor >nul 2>nul
 		echo [%TIME%] [EXTRACTED] - [FOLDER] - [vendor]>>!log_decompile!
-		REM del "%current%\tmp\vendor_sparse.img" >nul 2>nul
 	)
-	if exist "%current%\tmp\product.img" (
-		mkdir %current%\ROM\product >nul 2>nul
+	if exist "%current%\product.img" (
+		mkdir %current%\product >nul 2>nul
 		echo   product
-		%bin%\imgextractor %current%\tmp\product.img %current%\ROM\product >nul 2>nul
+		%bin%\imgextractor %current%\product.img %current%\product >nul 2>nul
 		echo [%TIME%] [EXTRACTED] - [FOLDER] - [product]>>!log_decompile!
-		REM del "%current%\tmp\product_sparse.img" >nul 2>nul
 	)
-	if exist "%current%\tmp\prism.img" (
+	if exist "%current%\prism.img" (
 		echo   prism
-		mkdir %current%\ROM\prism >nul 2>nul
-		%bin%\imgextractor %current%\tmp\prism.img %current%\ROM\prism >nul 2>nul
+		mkdir %current%\prism >nul 2>nul
+		%bin%\imgextractor %current%\prism.img %current%\prism >nul 2>nul
 		echo [%TIME%] [EXTRACTED] - [FOLDER] - [prism]>>!log_decompile!
-		REM del "%current%\tmp\prism_sparse.img" >nul 2>nul
 	)
-	if exist "%current%\tmp\optics.img" (
+	if exist "%current%\optics.img" (
 		echo   optics
-		mkdir %current%\ROM\optics >nul 2>nul
-		%bin%\7z x %current%\tmp\optics.img -o%current%\ROM\optics >nul 2>nul
+		mkdir %current%\optics >nul 2>nul
+		%bin%\7z x %current%\optics.img -o%current%\optics >nul 2>nul
 		echo [%TIME%] [EXTRACTED] - [FOLDER] - [optics]>>!log_decompile!
-		REM del "%current%\tmp\optics_sparse.img" >nul 2>nul
 	)
-	if exist "%current%\tmp\odm.img" (
+	if exist "%current%\odm.img" (
 		echo   odm
-		mkdir %current%\ROM\odm >nul 2>nul
-		%bin%\7z x %current%\tmp\odm.img -o%current%\ROM\odm >nul 2>nul
+		mkdir %current%\odm >nul 2>nul
+		%bin%\7z x %current%\odm.img -o%current%\odm >nul 2>nul
 		echo [%TIME%] [EXTRACTED] - [FOLDER] - [odm]>>!log_decompile!
-		REM del "%current%\tmp\odm_sparse.img" >nul 2>nul
 	)
 	goto mover_recursos
 	
 :mover_recursos
-	move /y %current%\ROM\*.txt %current%\project_files\data >nul 2>nul
-	for %%f in (%current%\project_files\data\*.txt) do (
+	move /y %current%\*.txt %current%\_project_files\data >nul 2>nul
+	for %%f in (%current%\_project_files\data\*.txt) do (
     ren %%f %%~nf
     )
-	move /y %current%\tmp\*_file_contexts %current%\project_files\data >nul 2>nul
-	move /y %current%\tmp\*_fs_config %current%\project_files\data >nul 2>nul
-	move /y %current%\tmp\dt.img %current%\project_files\data >nul 2>nul
-	move /y %current%\tmp\dtbo.img %current%\project_files\data >nul 2>nul
-	move /y %current%\tmp\recovery.img %current%\project_files\data >nul 2>nul
-	move /y %current%\tmp\boot.img %current%\ROM >nul 2>nul
-	move /y %current%\tmp\*.bin %current%\project_files\data >nul 2>nul
-	ren %current%\project_files\data\system_fs_config system_fs_config2
-	ren %current%\project_files\data\system_file_contexts system_file_contexts2
+	move /y %current%\*_file_contexts %current%\_project_files\data >nul 2>nul
+	move /y %current%\*_fs_config %current%\_project_files\data >nul 2>nul
+	move /y %current%\dt.img %current%\_project_files\data >nul 2>nul
+	move /y %current%\dtbo.img %current%\_project_files\data >nul 2>nul
+	move /y %current%\recovery.img %current%\_project_files\data >nul 2>nul
+	move /y %current%\boot.img %current% >nul 2>nul
+	move /y %current%\*.bin %current%\_project_files\data >nul 2>nul
+	ren %current%\_project_files\data\system_fs_config system_fs_config2
+	ren %current%\_project_files\data\system_file_contexts system_file_contexts2
 	goto generar_fs_y_fc
 
 :generar_fs_y_fc
 	:: --- --- --- Generador de system_fs_config --- --- --- ::
-	if exist %current%\project_files\data\system_fs_config del %current%\project_files\data\system_fs_config
-	%bin%\fs_generator %current%\tmp\system.img>>%current%\project_files\data\system_fs_config
-	if exist %current%\project_files\data\system_fs_config echo [%TIME%] [GENERATED] - [system_fs_config]>>!log_decompile!
+	if exist %current%\_project_files\data\system_fs_config del %current%\_project_files\data\system_fs_config
+	%bin%\fs_generator %current%\system.img>>%current%\_project_files\data\system_fs_config
+	if exist %current%\_project_files\data\system_fs_config echo [%TIME%] [GENERATED] - [system_fs_config]>>!log_decompile!
 
 	:: --- --- --- Generador de system_file_contexts --- --- --- ::
-	if exist %current%\project_files\data\system_file_contexts del %current%\project_files\data\system_file_contexts
-	%bin%\fc_finder "%current%\ROM" "%current%\tmp\un_file_contexts" "plat_file_contexts|vendor_file_contexts|nonplat_file_contexts"
-	if exist %current%\tmp\un_file_contexts !busybox! sort -u < %current%\tmp\un_file_contexts >> %current%\tmp\system_file_contexts
-	if exist %current%\tmp\un_file_contexts !busybox! rm -rf %current%\tmp\un_file_contexts >nul 2>nul
-	if exist %current%\tmp\system_file_contexts %bin%\dos2unix -q  %current%\tmp\system_file_contexts
-	if exist %current%\tmp\system_file_contexts move /y %current%\tmp\system_file_contexts %current%\project_files\data\system_file_contexts >nul 2>nul
-	if exist %current%\project_files\data\system_file_contexts echo [%TIME%] [GENERATED] - [system_file_contexts]>>!log_decompile!
+	if exist %current%\_project_files\data\system_file_contexts del %current%\_project_files\data\system_file_contexts
+	%bin%\fc_finder "%current%" "%current%\un_file_contexts" "plat_file_contexts|vendor_file_contexts|nonplat_file_contexts"
+	if exist %current%\un_file_contexts !busybox! sort -u < %current%\un_file_contexts >> %current%\system_file_contexts
+	if exist %current%\un_file_contexts !busybox! rm -rf %current%\un_file_contexts >nul 2>nul
+	if exist %current%\system_file_contexts %bin%\dos2unix -q  %current%\system_file_contexts
+	if exist %current%\system_file_contexts move /y %current%\system_file_contexts %current%\_project_files\data\system_file_contexts >nul 2>nul
+	if exist %current%\_project_files\data\system_file_contexts echo [%TIME%] [GENERATED] - [system_file_contexts]>>!log_decompile!
 	call :generar_meta
 	goto limpiar_tmp
 
 :limpiar_tmp
-	REM rd /s /q "%current%\tmp" >nul 2>nul
+	REM rd /s /q "%current%" >nul 2>nul
 	call reiniciar
 
 :reiniciar
@@ -1354,9 +1291,9 @@ setlocal enabledelayedexpansion
 
 :zip_files
 	cls
-	mkdir %current%\tmp
+	mkdir %current%
 	echo Extracting %file_rom_base% to tmp
-	%bin%\7z x "%file_rom%" -o"%current%\tmp" >nul
+	%bin%\7z x "%file_rom%" -o"%current%" >nul
 	pause>nul
 	goto menu_de_extraccion
 
@@ -1563,9 +1500,9 @@ setlocal enabledelayedexpansion
 :debloat
 	cls
 	if exist %current%\bloat_ROM (
-		move /y %current%\bloat_ROM\system %current%\project_files\bloat >nul 2>nul
+		move /y %current%\bloat_ROM\system %current%\_project_files\bloat >nul 2>nul
 	)
-	if exist "%current%\project_files\bloat\*" (
+	if exist "%current%\_project_files\bloat\*" (
 		echo.
 		%cl%   {03}The current project does not need debloat{#}
 		echo.
@@ -1591,15 +1528,15 @@ setlocal enabledelayedexpansion
 			)
 		)
 	)
-	move /y %current%\bloat_ROM\system %current%\project_files\bloat >nul 2>nul
+	move /y %current%\bloat_ROM\system %current%\_project_files\bloat >nul 2>nul
 	echo.
 	echo    Press any key for to back menu
 	pause>nul
 	goto debloat_list
 
 :restaurar_bloat
-    move "%current%\project_files\bloat\system" "%current%\ROM\"
-	rd /s /q "%current%\project_files\bloat"
+    move "%current%\_project_files\bloat\system" "%current%\"
+	rd /s /q "%current%\_project_files\bloat"
 	pause>nul
 	goto debloat_list
 
@@ -1634,7 +1571,7 @@ setlocal enabledelayedexpansion
 :deknox
 	cls
 	for /f "delims=" %%a in ('type "tools\data\knox"') do (
-		for /f "delims=" %%b in ('tools\bin\find "%current%\ROM\system" -name %%a ^| !busybox! tr / \\') do (
+		for /f "delims=" %%b in ('tools\bin\find "%current%\system" -name %%a ^| !busybox! tr / \\') do (
 			for /f "delims=" %%c in ('!busybox! dirname %%b') do (
 				set orig_dir=%%c
 				set test_folder=%%~nc%%~xc
@@ -1649,8 +1586,8 @@ setlocal enabledelayedexpansion
 			)
 		)
 	)
-	mkdir %current%\ROM\knox >nul
-	move /y "%current%\ROM\knox\system" "%current%\project_files\knox">nul 2>nul
+	mkdir %current%\knox >nul
+	move /y "%current%\knox\system" "%current%\_project_files\knox">nul 2>nul
 	echo.
 	echo    Press any key for to back menu
 	pause>nul
@@ -1660,8 +1597,8 @@ setlocal enabledelayedexpansion
 
 
 :restaurar_knox
-    move /y %current%\project_files\knox\system %current%\ROM\system\system
-	rd /s /q "%current%\project_files\knox"
+    move /y %current%\_project_files\knox\system %current%\system\system
+	rd /s /q "%current%\_project_files\knox"
 	goto deknox_list
 
 
@@ -1827,7 +1764,7 @@ setlocal enabledelayedexpansion
 	if "!select!"=="e" goto salir
 
 :soporte_root
-    xcopy /y tools\utils\root_support %current%\ROM /s >nul 2>nul
+    xcopy /y tools\utils\root_support %current% /s >nul 2>nul
     %bin%\rpc "!updater-script!" "#ROOT_SUPPORT_1" "################################################################" >nul
     %bin%\rpc "!updater-script!" "#ROOT_SUPPORT_2" "#               ROOT METHOD" >nul
     %bin%\rpc "!updater-script!" "#ROOT_SUPPORT_3" "################################################################" >nul
@@ -1838,7 +1775,7 @@ setlocal enabledelayedexpansion
     pause>nul
     goto home
 
-	del %current%\ROM\*.lz4 >nul
+	del %current%\*.lz4 >nul
 	goto compilar_tar_menu
 :: --- --- --- 8) boot tools --- --- --- ::
 :boot_recovery_tools
@@ -1887,7 +1824,7 @@ setlocal enabledelayedexpansion
     if not exist "%current%\Addons\kernel_unpacked" (
 		mkdir %current%\Addons\kernel_unpacked
 	) 
-    copy /y %current%\ROM\boot.img tools\plugins\aik_boot >nul 2>nul
+    copy /y %current%\boot.img tools\plugins\aik_boot >nul 2>nul
     set aik_unpack=tools\plugins\aik_boot\unpackimg.bat
 	call !aik_unpack! >nul 2>nul
 	move /y "tools\plugins\aik_boot\split_img" "%current%\Addons\kernel_unpacked" >nul 2>nul
@@ -1938,16 +1875,16 @@ setlocal enabledelayedexpansion
 	%cl%   {47} Bootlogo Fixer {#}
 	echo.
 	echo.
-	if exist "%current%\project_files\data\param.bin" (
+	if exist "%current%\_project_files\data\param.bin" (
 		echo   Please wait....
 		%cl%   {03}Param.bin detect{#}...
 		echo.
-		copy %current%\project_files\data\param.bin %current%\project_files\data\param_tmp.bin >nul 2>nul
+		copy %current%\_project_files\data\param.bin %current%\_project_files\data\param_tmp.bin >nul 2>nul
 		%cl%   {03}creating temporary param{#}...
 		echo.
-		%bin%\7z a %current%\project_files\data\param_tmp.bin .\tools\plugins\param_patch\booting_warning.jpg >nul 2>nul
-		ren %current%\project_files\data\param_tmp.bin param_patched.bin
-		if exist "%current%\project_files\data\param_patched.bin" (
+		%bin%\7z a %current%\_project_files\data\param_tmp.bin .\tools\plugins\param_patch\booting_warning.jpg >nul 2>nul
+		ren %current%\_project_files\data\param_tmp.bin param_patched.bin
+		if exist "%current%\_project_files\data\param_patched.bin" (
 			echo.
 			%cl%   {02}Param successfully patched{#}
 			echo.
@@ -1962,7 +1899,7 @@ setlocal enabledelayedexpansion
 		)
 	) else (
 		echo.
-		%cl%   {04}no param was detected in: %current%\project_files\data\{#}
+		%cl%   {04}no param was detected in: %current%\_project_files\data\{#}
 		echo.
 		pause>nul
 		goto rom_tools
@@ -1971,13 +1908,13 @@ setlocal enabledelayedexpansion
 :cambiar_bootlogo
 	cls
 
-    for /f %%a in ('dir %current%\ROM\product\omc\ /ad /b' ) do (
-		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc -o %current%\ROM\product\omc >nul
-		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc\single -o %current%\ROM\product\omc\single >nul
+    for /f %%a in ('dir %current%\product\omc\ /ad /b' ) do (
+		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\product\omc -o %current%\product\omc >nul
+		java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\product\omc\single -o %current%\product\omc\single >nul
 		%cl%  {03}Encoding{#} product\omc\%%a
 		echo.
 	)
-	del %current%\project_files\data\omc_status 
+	del %current%\_project_files\data\omc_status 
 	%bin%\sfk replace %data%\user_data "/sk.omc.status=decoded/sk.omc.status=encoded/" -yes > nul
 	pause
 	goto plugins
@@ -2216,28 +2153,28 @@ setlocal enabledelayedexpansion
 		)
 
 :decodificar_omc
-	if exist "%current%\ROM\product\omc" (
+	if exist "%current%\product\omc" (
 		cls
 		call :banner
-		for /f %%a in ('dir %current%\ROM\product\omc\ /ad /b' ) do (
-			%cl%  {03}Decoding{#} %current%\ROM\product\omc\%%a\conf\cscfeature.xml
+		for /f %%a in ('dir %current%\product\omc\ /ad /b' ) do (
+			%cl%  {03}Decoding{#} %current%\product\omc\%%a\conf\cscfeature.xml
 			echo.
-			%cl%  {03}Decoding{#} %current%\ROM\product\omc\%%a\conf\cscfeature_network.xml
+			%cl%  {03}Decoding{#} %current%\product\omc\%%a\conf\cscfeature_network.xml
 			echo.
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\ROM\product\omc -o %current%\ROM\product\omc >nul
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\ROM\product\omc\single -o %current%\ROM\product\omc\single >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\product\omc -o %current%\product\omc >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\product\omc\single -o %current%\product\omc\single >nul
 		)
 	)
-	if exist "%current%\ROM\optics\configs\carriers" (
+	if exist "%current%\optics\configs\carriers" (
 		cls
 		call :banner
-		for /f %%a in ('dir %current%\ROM\optics\configs\carriers\ /ad /b' ) do (
-			%cl%  {03}Decoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature.xml
+		for /f %%a in ('dir %current%\optics\configs\carriers\ /ad /b' ) do (
+			%cl%  {03}Decoding{#} %current%\optics\configs\carriers\%%a\conf\cscfeature.xml
 			echo.
-			%cl%  {03}Decoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature_network.xml
+			%cl%  {03}Decoding{#} %current%\optics\configs\carriers\%%a\conf\cscfeature_network.xml
 			echo.
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\ROM\optics\configs\carriers -o %current%\ROM\optics\configs\carriers >nul
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\ROM\optics\configs\carriers\single -o %current%\ROM\optics\configs\carriers\single >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\optics\configs\carriers -o %current%\optics\configs\carriers >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -i %current%\optics\configs\carriers\single -o %current%\optics\configs\carriers\single >nul
 		)
 	) else (
 		echo.
@@ -2249,28 +2186,28 @@ setlocal enabledelayedexpansion
 	goto omc_decoder_menu
 
 :codificar_omc
-	if exist "%current%\ROM\product\omc" (
+	if exist "%current%\product\omc" (
 		cls
 		call :banner
-		for /f %%a in ('dir %current%\ROM\product\omc\ /ad /b' ) do (
-			%cl%  {03}Encoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature.xml
+		for /f %%a in ('dir %current%\product\omc\ /ad /b' ) do (
+			%cl%  {03}Encoding{#} %current%\optics\configs\carriers\%%a\conf\cscfeature.xml
 			echo.
-			%cl%  {03}Encoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature_network.xml
+			%cl%  {03}Encoding{#} %current%\optics\configs\carriers\%%a\conf\cscfeature_network.xml
 			echo.
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc -o %current%\ROM\product\omc >nul
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\product\omc\single -o %current%\ROM\product\omc\single >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\product\omc -o %current%\product\omc >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\product\omc\single -o %current%\product\omc\single >nul
 		)
 	)
-	if exist "%current%\ROM\optics\configs\carriers" (
+	if exist "%current%\optics\configs\carriers" (
 		cls
 		call :banner
-		for /f %%a in ('dir %current%\ROM\optics\configs\carriers\ /ad /b' ) do (
-			%cl%  {03}Encoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature.xml
+		for /f %%a in ('dir %current%\optics\configs\carriers\ /ad /b' ) do (
+			%cl%  {03}Encoding{#} %current%\optics\configs\carriers\%%a\conf\cscfeature.xml
 			echo.
-			%cl%  {03}Encoding{#} %current%\ROM\optics\configs\carriers\%%a\conf\cscfeature_network.xml
+			%cl%  {03}Encoding{#} %current%\optics\configs\carriers\%%a\conf\cscfeature_network.xml
 			echo.
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\optics\configs\carriers -o %current%\ROM\optics\configs\carriers >nul
-			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\ROM\optics\configs\carriers\single -o %current%\ROM\optics\configs\carriers\single >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\optics\configs\carriers -o %current%\optics\configs\carriers >nul
+			java -jar tools\plugins\omc_decoder\omc-decoder.jar -e -i %current%\optics\configs\carriers\single -o %current%\optics\configs\carriers\single >nul
 		)
 	) else (
 		echo.
@@ -2449,7 +2386,7 @@ setlocal enabledelayedexpansion
 	exit /b
 
 :variables_de_respaldo
-	if not exist "%current%\ROM\system\system\build.prop" (
+	if not exist "%current%\system\system\build.prop" (
 		set pda=Unknown
 		set dispositivo=Unknown
 		set modelo=Unknown
@@ -2458,7 +2395,7 @@ setlocal enabledelayedexpansion
 		set chipset=Unknown
 		set security_patch=Unknown
 	)
-	if not exist "%current%\project_files\data\user_data" (
+	if not exist "%current%\_project_files\data\user_data" (
 		set project_name=Unknown
 		set project_autor=Unknown
 	)
@@ -2466,42 +2403,42 @@ setlocal enabledelayedexpansion
 
 :datos
 	::build.prop
-	if exist "%current%\ROM\system\system\build.prop" (
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.incremental="') do ( set "pda=%%#")
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.release="') do ( set "android_version=%%#")
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.system.device="') do ( set "dispositivo=%%#")
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.system.model="') do ( set "modelo=%%#")
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.product.cpu.abi="') do ( set "arquitectura=%%#")
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.hardware.chipname="') do ( set "chipset=%%#")
-		for /f "Tokens=2* Delims==" %%# in ('type "%system%\build.prop" ^| findstr "ro.build.version.security_patch="') do ( set "security_patch=%%#")
+	if exist "%current%\system\system\build.prop" (
+		for /f "Tokens=2* Delims==" %%# in ('type "%current%\system\system\build.prop" ^| findstr "ro.build.version.incremental="') do ( set "pda=%%#")
+		for /f "Tokens=2* Delims==" %%# in ('type "%current%\system\system\build.prop" ^| findstr "ro.build.version.release="') do ( set "android_version=%%#")
+		for /f "Tokens=2* Delims==" %%# in ('type "%current%\system\system\build.prop" ^| findstr "ro.product.system.device="') do ( set "dispositivo=%%#")
+		for /f "Tokens=2* Delims==" %%# in ('type "%current%\system\system\build.prop" ^| findstr "ro.product.system.model="') do ( set "modelo=%%#")
+		for /f "Tokens=2* Delims==" %%# in ('type "%current%\system\system\build.prop" ^| findstr "ro.product.cpu.abi="') do ( set "arquitectura=%%#")
+		for /f "Tokens=2* Delims==" %%# in ('type "%current%\system\system\build.prop" ^| findstr "ro.hardware.chipname="') do ( set "chipset=%%#")
+		for /f "Tokens=2* Delims==" %%# in ('type "%current%\system\system\build.prop" ^| findstr "ro.build.version.security_patch="') do ( set "security_patch=%%#")
 	)
 	::user_data
-	if exist "%current%\project_files\data\user_data" (
+	if exist "%current%\_project_files\data\user_data" (
 		for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "project_name="') do ( set "project_name=%%#")
 		for /f "Tokens=2* Delims==" %%# in ('type "%data%\user_data" ^| findstr "project_dev="') do ( set "project_autor=%%#")
 	)
 	::status
 	if exist "%current%" (
 		:: Installer Detect
-		if exist "%current%\ROM\META-INF" (
+		if exist "%current%\META-INF" (
 			set installer_status=Generated
 		) else (
 			set installer_status=Not Exist
 		)
 		:: Bloat Detect
-		if exist "%current%\project_files\bloat" (
+		if exist "%current%\_project_files\bloat" (
 			set bloat_status=Debloated
 		) else (
 			set bloat_status=Bloated
 		)
 		:: Knox Detect
-		if exist "%current%\project_files\knox" (
+		if exist "%current%\_project_files\knox" (
 			set knox_status=Deknoxed
 		) else (
 			set knox_status=Knoxed
 		)
 		:: Deodex Detect
-		if exist %current%\ROM\system\system\framework\*.vdex (
+		if exist %current%\system\system\framework\*.vdex (
 			set deodex_status=Odexed
 		) else (
 			set deodex_status=Deodexed

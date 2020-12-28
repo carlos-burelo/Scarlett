@@ -1,4 +1,4 @@
-::Build 2.02 -->Optimizacion del code
+::Build 2.02 =>Optimizacion del code
 
 @echo off
 mode con: cols=96 lines=26
